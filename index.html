@@ -1,0 +1,4012 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Matriz Consolidada Operación Logística — Secretaría de Participación Ciudadana de Medellín">
+<title>Matriz Operación Logística · SPC Medellín</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================
+   TOKENS DE DISEÑO
+   ============================================================ */
+:root {
+  /* Paleta institucional - tonos cálidos con verde profundo */
+  --color-bg: #fafaf7;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f4f3ee;
+  --color-surface-elev: #ffffff;
+
+  --color-text: #1a1a17;
+  --color-text-secondary: #5a5a55;
+  --color-text-tertiary: #8a8a82;
+
+  --color-border: #e5e3dc;
+  --color-border-strong: #c9c6bb;
+
+  --color-accent: #1f3a30;        /* Verde institucional profundo */
+  --color-accent-light: #2d5546;
+  --color-accent-hover: #173028;
+  --color-accent-soft: #e8efe9;
+
+  --color-gold: #a8842d;
+  --color-gold-soft: #f5efdc;
+
+  --color-success: #2d6a4f;
+  --color-success-soft: #e1efe6;
+  --color-warning: #b07b15;
+  --color-warning-soft: #f7ecd0;
+  --color-danger: #9a2a2a;
+  --color-danger-soft: #f4dede;
+  --color-info: #2c4870;
+  --color-info-soft: #e0e7f1;
+
+  /* Tipografía */
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'IBM Plex Sans', -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+
+  /* Espaciado */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+
+  /* Sombras */
+  --shadow-sm: 0 1px 2px rgba(26, 26, 23, 0.04), 0 1px 1px rgba(26, 26, 23, 0.03);
+  --shadow-md: 0 4px 12px rgba(26, 26, 23, 0.06), 0 2px 4px rgba(26, 26, 23, 0.03);
+  --shadow-lg: 0 20px 40px rgba(26, 26, 23, 0.08), 0 8px 16px rgba(26, 26, 23, 0.04);
+  --shadow-xl: 0 30px 60px rgba(26, 26, 23, 0.12), 0 16px 32px rgba(26, 26, 23, 0.06);
+
+  /* Radios */
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 10px;
+  --r-xl: 14px;
+
+  /* Transiciones */
+  --t-fast: 120ms ease;
+  --t-base: 200ms ease;
+  --t-slow: 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 14px;
+  line-height: 1.5;
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+/* ============================================================
+   LOGIN
+   ============================================================ */
+.login-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--color-bg);
+}
+
+.login-aside {
+  background: linear-gradient(165deg, var(--color-accent) 0%, var(--color-accent-light) 65%, #2d5546 100%);
+  color: #f4f2eb;
+  padding: var(--sp-7);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-aside::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255,255,255,0.03) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(168, 132, 45, 0.08) 0%, transparent 40%);
+  pointer-events: none;
+}
+
+.login-brand {
+  position: relative;
+  z-index: 1;
+}
+
+.login-brand-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+  margin-bottom: var(--sp-1);
+  font-style: italic;
+}
+
+.login-brand-sub {
+  font-size: 12px;
+  opacity: 0.7;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.login-hero {
+  position: relative;
+  z-index: 1;
+}
+
+.login-hero h1 {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(40px, 5vw, 64px);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  margin-bottom: var(--sp-4);
+}
+
+.login-hero h1 em {
+  font-style: italic;
+  color: #e8d59c;
+  font-weight: 400;
+}
+
+.login-hero p {
+  font-size: 15px;
+  opacity: 0.78;
+  max-width: 440px;
+  line-height: 1.6;
+}
+
+.login-meta {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: var(--sp-6);
+  font-size: 12px;
+  opacity: 0.55;
+  letter-spacing: 0.04em;
+}
+
+.login-meta div {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.login-meta strong {
+  font-weight: 500;
+  color: #e8d59c;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.login-form-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-7);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+}
+
+.login-card h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 28px;
+  letter-spacing: -0.015em;
+  margin-bottom: var(--sp-2);
+}
+
+.login-card .login-hint {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  margin-bottom: var(--sp-6);
+}
+
+.role-selector {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-5);
+}
+
+.role-option {
+  display: flex;
+  align-items: center;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: var(--t-base);
+  text-align: left;
+  width: 100%;
+}
+
+.role-option:hover {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-alt);
+}
+
+.role-option.selected {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  box-shadow: 0 0 0 3px rgba(31, 58, 48, 0.08);
+}
+
+.role-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-sm);
+  background: var(--color-surface-alt);
+  display: grid;
+  place-items: center;
+  margin-right: var(--sp-3);
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+.role-option.selected .role-icon {
+  background: var(--color-accent);
+  color: white;
+}
+
+.role-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.role-name {
+  font-size: 13.5px;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.role-desc {
+  font-size: 11.5px;
+  color: var(--color-text-secondary);
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 12px 20px;
+  background: var(--color-accent);
+  color: white;
+  border-radius: var(--r-md);
+  font-weight: 500;
+  font-size: 14px;
+  transition: var(--t-base);
+  letter-spacing: 0.02em;
+}
+
+.btn-primary:hover {
+  background: var(--color-accent-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary:disabled {
+  background: var(--color-border-strong);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.login-demo-tag {
+  margin-top: var(--sp-5);
+  padding: var(--sp-3);
+  background: var(--color-warning-soft);
+  border-left: 3px solid var(--color-warning);
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  color: var(--color-warning);
+  font-weight: 500;
+}
+
+/* ============================================================
+   APP SHELL
+   ============================================================ */
+.app {
+  display: none;
+  min-height: 100vh;
+  grid-template-columns: 240px 1fr;
+}
+
+.app.active {
+  display: grid;
+}
+
+/* Sidebar */
+.sidebar {
+  background: var(--color-accent);
+  color: #d9d4c4;
+  padding: var(--sp-5) 0;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebar-brand {
+  padding: 0 var(--sp-5) var(--sp-5);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  margin-bottom: var(--sp-4);
+}
+
+.sidebar-brand-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-style: italic;
+  font-size: 18px;
+  color: #f4f2eb;
+  margin-bottom: 2px;
+}
+
+.sidebar-brand-sub {
+  font-size: 10.5px;
+  opacity: 0.55;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.nav-section-label {
+  padding: var(--sp-4) var(--sp-5) var(--sp-2);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.45;
+  font-weight: 500;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  padding: 10px var(--sp-5);
+  color: #d9d4c4;
+  cursor: pointer;
+  font-size: 13.5px;
+  border-left: 2px solid transparent;
+  transition: var(--t-fast);
+  gap: var(--sp-3);
+  width: 100%;
+  text-align: left;
+}
+
+.nav-item:hover {
+  background: rgba(255,255,255,0.04);
+  color: white;
+}
+
+.nav-item.active {
+  background: rgba(255,255,255,0.06);
+  border-left-color: #e8d59c;
+  color: white;
+  font-weight: 500;
+}
+
+.nav-item.disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.nav-item-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.7;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: var(--sp-4) var(--sp-5);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  font-size: 11px;
+  opacity: 0.45;
+}
+
+/* Main */
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.topbar {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: 0 var(--sp-6);
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.topbar-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.topbar-status {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-success);
+  box-shadow: 0 0 0 3px var(--color-success-soft);
+}
+
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 6px var(--sp-3) 6px 6px;
+  background: var(--color-surface-alt);
+  border-radius: 100px;
+  font-size: 12.5px;
+  font-weight: 500;
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: var(--t-fast);
+}
+
+.user-chip:hover {
+  background: var(--color-border);
+}
+
+.user-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: white;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
+.role-badge {
+  font-size: 10px;
+  background: var(--color-gold-soft);
+  color: var(--color-gold);
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.content {
+  padding: var(--sp-6);
+  flex: 1;
+  min-width: 0;
+}
+
+/* ============================================================
+   DASHBOARD / RESUMEN
+   ============================================================ */
+.page-header {
+  margin-bottom: var(--sp-6);
+}
+
+.page-header h1 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 38px;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-bottom: var(--sp-2);
+}
+
+.page-header p {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  max-width: 720px;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-6);
+}
+
+.kpi-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
+  padding: var(--sp-5);
+  position: relative;
+  overflow: hidden;
+  transition: var(--t-base);
+}
+
+.kpi-card:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-md);
+}
+
+.kpi-label {
+  font-size: 11.5px;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: var(--sp-2);
+  font-weight: 500;
+}
+
+.kpi-value {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 30px;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.kpi-value-suffix {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin-left: 4px;
+}
+
+.kpi-trend {
+  margin-top: var(--sp-3);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kpi-trend.up { color: var(--color-success); }
+.kpi-trend.flat { color: var(--color-text-secondary); }
+
+.kpi-progress {
+  margin-top: var(--sp-3);
+  height: 4px;
+  background: var(--color-surface-alt);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.kpi-progress-fill {
+  height: 100%;
+  background: var(--color-accent);
+  border-radius: 100px;
+}
+
+/* Charts */
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-6);
+}
+
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
+  padding: var(--sp-5);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-5);
+}
+
+.panel-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+}
+
+.panel-action {
+  font-size: 12px;
+  color: var(--color-accent);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 90px;
+  gap: var(--sp-3);
+  align-items: center;
+  font-size: 12.5px;
+}
+
+.bar-label {
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.bar-track {
+  height: 22px;
+  background: var(--color-surface-alt);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  position: relative;
+}
+
+.bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-accent-light) 100%);
+  border-radius: var(--r-sm);
+  transition: width 800ms cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.bar-fill.gold {
+  background: linear-gradient(90deg, var(--color-gold) 0%, #c19a3d 100%);
+}
+
+.bar-value {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-align: right;
+  font-weight: 500;
+}
+
+.donut-wrap {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  margin: 0 auto var(--sp-4);
+}
+
+.donut-svg {
+  transform: rotate(-90deg);
+}
+
+.donut-bg {
+  fill: none;
+  stroke: var(--color-surface-alt);
+  stroke-width: 18;
+}
+
+.donut-center {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.donut-center-value {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 500;
+}
+
+.donut-center-label {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.legend-item {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  gap: var(--sp-3);
+  align-items: center;
+  font-size: 12.5px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.legend-count {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 12px;
+}
+
+/* ============================================================
+   TABLA DE REQUERIMIENTOS
+   ============================================================ */
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.search-wrap {
+  position: relative;
+  flex: 1;
+  max-width: 360px;
+}
+
+.search-wrap input {
+  width: 100%;
+  padding: 8px 12px 8px 36px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-md);
+  font-size: 13px;
+  transition: var(--t-fast);
+}
+
+.search-wrap input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(31, 58, 48, 0.08);
+}
+
+.search-wrap svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  stroke: var(--color-text-tertiary);
+  fill: none;
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.filter-select {
+  padding: 8px 28px 8px 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-md);
+  font-size: 13px;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path d='M3 5l3 3 3-3' stroke='%235a5a55' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+
+.btn-secondary {
+  padding: 8px 14px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-md);
+  font-size: 13px;
+  font-weight: 500;
+  transition: var(--t-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-secondary:hover {
+  background: var(--color-surface-alt);
+  border-color: var(--color-border-strong);
+}
+
+.btn-accent {
+  padding: 8px 14px;
+  background: var(--color-accent);
+  color: white;
+  border-radius: var(--r-md);
+  font-size: 13px;
+  font-weight: 500;
+  transition: var(--t-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.btn-accent:hover {
+  background: var(--color-accent-hover);
+}
+
+.btn-icon {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+.table-wrap {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.data-table thead {
+  background: var(--color-surface-alt);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.data-table th {
+  text-align: left;
+  padding: 11px var(--sp-4);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: 13px var(--sp-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.data-table tbody tr {
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+
+.data-table tbody tr:hover {
+  background: var(--color-accent-soft);
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.cell-mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.cell-number {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  text-align: right;
+}
+
+.cell-truncate {
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.status-pill.ejecutado { background: var(--color-success-soft); color: var(--color-success); }
+.status-pill.cotizacion { background: var(--color-info-soft); color: var(--color-info); }
+.status-pill.subsanacion { background: var(--color-warning-soft); color: var(--color-warning); }
+.status-pill.ejecucion { background: var(--color-gold-soft); color: var(--color-gold); }
+.status-pill.cancelado { background: var(--color-danger-soft); color: var(--color-danger); }
+.status-pill.suspendido { background: var(--color-surface-alt); color: var(--color-text-secondary); }
+
+.table-footer {
+  padding: var(--sp-3) var(--sp-4);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+}
+
+.pagination {
+  display: flex;
+  gap: var(--sp-1);
+}
+
+.page-btn {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-sm);
+  background: var(--color-surface);
+  font-size: 12px;
+  transition: var(--t-fast);
+}
+
+.page-btn:hover {
+  background: var(--color-surface-alt);
+}
+
+.page-btn.active {
+  background: var(--color-accent);
+  color: white;
+  border-color: var(--color-accent);
+}
+
+/* ============================================================
+   MODAL DE EDICIÓN
+   ============================================================ */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 26, 23, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-5);
+  animation: fadeIn 200ms ease;
+}
+
+.modal-backdrop.active {
+  display: flex;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.modal {
+  background: var(--color-surface);
+  border-radius: var(--r-xl);
+  width: 100%;
+  max-width: 1080px;
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+  animation: slideUp 280ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-header {
+  padding: var(--sp-5) var(--sp-6);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.modal-title-group {
+  flex: 1;
+  min-width: 0;
+}
+
+.modal-eyebrow {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: var(--sp-1);
+  font-weight: 500;
+}
+
+.modal-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+}
+
+.modal-meta {
+  display: flex;
+  gap: var(--sp-4);
+  margin-top: var(--sp-2);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.modal-meta-item {
+  display: flex;
+  gap: var(--sp-1);
+}
+
+.modal-meta-item strong {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-md);
+  color: var(--color-text-secondary);
+  transition: var(--t-fast);
+}
+
+.modal-close:hover {
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+}
+
+.modal-tabs {
+  display: flex;
+  padding: 0 var(--sp-6);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg);
+  gap: var(--sp-1);
+  overflow-x: auto;
+}
+
+.tab-btn {
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  border-bottom: 2px solid transparent;
+  transition: var(--t-fast);
+  margin-bottom: -1px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.tab-btn:hover {
+  color: var(--color-text);
+}
+
+.tab-btn.active {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
+
+.tab-role-badge {
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 100px;
+  background: var(--color-surface-alt);
+  color: var(--color-text-tertiary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tab-btn.active .tab-role-badge {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.tab-lock {
+  width: 11px;
+  height: 11px;
+  opacity: 0.5;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-6);
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+.form-banner {
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--color-info-soft);
+  border-left: 3px solid var(--color-info);
+  border-radius: var(--r-sm);
+  font-size: 12.5px;
+  color: var(--color-info);
+  margin-bottom: var(--sp-5);
+  display: flex;
+  gap: var(--sp-3);
+  align-items: flex-start;
+}
+
+.form-banner.warning {
+  background: var(--color-warning-soft);
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
+.form-banner.locked {
+  background: var(--color-surface-alt);
+  border-color: var(--color-border-strong);
+  color: var(--color-text-secondary);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--sp-4);
+}
+
+.form-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.form-grid.cols-1 { grid-template-columns: 1fr; }
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group.span-2 { grid-column: span 2; }
+.form-group.span-3 { grid-column: span 3; }
+
+.form-label {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: var(--sp-2);
+}
+
+.form-label .required {
+  color: var(--color-danger);
+  margin-left: 2px;
+}
+
+.form-label .hint {
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--color-text-tertiary);
+  font-weight: 400;
+  font-size: 11px;
+  margin-left: var(--sp-1);
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: 9px 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-md);
+  font-size: 13px;
+  transition: var(--t-fast);
+  font-family: var(--font-body);
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(31, 58, 48, 0.08);
+}
+
+.form-input.mono { font-family: var(--font-mono); }
+
+.form-input:disabled,
+.form-select:disabled,
+.form-textarea:disabled {
+  background: var(--color-surface-alt);
+  color: var(--color-text-secondary);
+  cursor: not-allowed;
+}
+
+.form-input.computed {
+  background: var(--color-gold-soft);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+.form-textarea {
+  min-height: 70px;
+  resize: vertical;
+}
+
+.section-divider {
+  margin: var(--sp-6) 0 var(--sp-4);
+  padding-bottom: var(--sp-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.section-divider-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+.section-divider-sub {
+  font-size: 11.5px;
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+}
+
+/* Autocomplete del tarifario */
+.tarifario-search {
+  position: relative;
+}
+
+.tarifario-results {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-lg);
+  max-height: 280px;
+  overflow-y: auto;
+  z-index: 50;
+  display: none;
+}
+
+.tarifario-results.active {
+  display: block;
+}
+
+.tarifario-result {
+  padding: var(--sp-3) var(--sp-4);
+  cursor: pointer;
+  transition: var(--t-fast);
+  border-bottom: 1px solid var(--color-border);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--sp-3);
+  align-items: center;
+}
+
+.tarifario-result:last-child { border-bottom: none; }
+.tarifario-result:hover { background: var(--color-accent-soft); }
+
+.tarifario-result-desc {
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.tarifario-result-meta {
+  font-size: 11.5px;
+  color: var(--color-text-secondary);
+  display: flex;
+  gap: var(--sp-3);
+}
+
+.tarifario-result-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.tarifario-cat-pill {
+  font-size: 10.5px;
+  background: var(--color-surface-alt);
+  padding: 2px 8px;
+  border-radius: 100px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.tarifario-info-box {
+  background: var(--color-accent-soft);
+  border: 1px solid #c9d8cc;
+  border-radius: var(--r-md);
+  padding: var(--sp-3) var(--sp-4);
+  margin-top: var(--sp-3);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--sp-3);
+  align-items: center;
+  font-size: 12.5px;
+  color: var(--color-accent);
+  display: none;
+}
+
+.tarifario-info-box.active { display: grid; }
+
+.tarifario-info-box svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+.tarifario-info-box strong {
+  font-weight: 600;
+}
+
+/* Cálculos financieros panel */
+.calc-panel {
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
+  padding: var(--sp-4);
+  margin-top: var(--sp-4);
+}
+
+.calc-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--sp-4);
+  padding: 6px 0;
+  font-size: 13px;
+}
+
+.calc-row.total {
+  margin-top: var(--sp-2);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--color-border-strong);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.calc-label {
+  color: var(--color-text-secondary);
+}
+
+.calc-value {
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+.modal-footer {
+  padding: var(--sp-4) var(--sp-6);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--color-bg);
+}
+
+.modal-footer-info {
+  font-size: 11.5px;
+  color: var(--color-text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.modal-footer-info svg {
+  width: 12px;
+  height: 12px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+.modal-footer-actions {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: var(--sp-5);
+  right: var(--sp-5);
+  background: var(--color-text);
+  color: white;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+  font-size: 13px;
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  transform: translateY(150%);
+  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.toast.active { transform: translateY(0); }
+.toast.success { background: var(--color-success); }
+
+.toast svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+/* ============================================================
+   TARIFARIO VIEW
+   ============================================================ */
+.cat-pills {
+  display: flex;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-5);
+  flex-wrap: wrap;
+}
+
+.cat-pill {
+  padding: 6px 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 100px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--t-fast);
+}
+
+.cat-pill:hover { background: var(--color-surface-alt); }
+
+.cat-pill.active {
+  background: var(--color-accent);
+  color: white;
+  border-color: var(--color-accent);
+}
+
+.cat-pill-count {
+  margin-left: 6px;
+  opacity: 0.7;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+/* ============================================================
+   AUDITORÍA
+   ============================================================ */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.timeline-item {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: var(--sp-4);
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.timeline-time {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--color-text-tertiary);
+}
+
+.timeline-content {
+  font-size: 13px;
+}
+
+.timeline-action {
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.timeline-details {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.timeline-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-surface-alt);
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-size: 11.5px;
+  font-weight: 500;
+  margin-right: 4px;
+}
+
+/* Helpers */
+.text-mono { font-family: var(--font-mono); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-success { color: var(--color-success); }
+.text-danger { color: var(--color-danger); }
+
+/* ============================================================
+   SELECTOR DE COLUMNAS Y TABLA ANCHA
+   ============================================================ */
+.cols-count {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 100px;
+  margin-left: 2px;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-wrap-wide .data-table {
+  min-width: max-content;
+}
+
+.table-wrap-wide .data-table th,
+.table-wrap-wide .data-table td {
+  white-space: nowrap;
+}
+
+.col-letter {
+  display: inline-block;
+  margin-left: 6px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  padding: 1px 5px;
+  border-radius: 3px;
+  vertical-align: middle;
+  letter-spacing: 0.04em;
+}
+
+/* Divisor entre momentos en modo "Nuevo requerimiento" */
+.momento-divider {
+  margin: var(--sp-7) 0 var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-accent-light) 100%);
+  border-radius: var(--r-md);
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  position: sticky;
+  top: -24px;
+  z-index: 2;
+  box-shadow: var(--shadow-sm);
+}
+
+.momento-divider:first-child {
+  margin-top: var(--sp-2);
+}
+
+.momento-divider-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(255,255,255,0.15);
+  padding: 3px 8px;
+  border-radius: 100px;
+  letter-spacing: 0.04em;
+}
+
+.momento-divider-label {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 15px;
+  letter-spacing: -0.005em;
+}
+
+.modal.is-new .modal-tabs {
+  display: none;
+}
+
+.modal.is-new .modal-eyebrow::after {
+  content: ' · vista completa';
+  color: var(--color-gold);
+  font-weight: 500;
+}
+
+/* Drawer de columnas */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 26, 23, 0.35);
+  z-index: 90;
+  display: none;
+  animation: fadeIn 180ms ease;
+}
+
+.drawer-backdrop.active { display: block; }
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: 420px;
+  max-width: 100vw;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-xl);
+  z-index: 91;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.drawer.active {
+  transform: translateX(0);
+}
+
+.drawer-header {
+  padding: var(--sp-5) var(--sp-5) var(--sp-4);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.drawer-title-group {
+  flex: 1;
+}
+
+.drawer-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  margin-bottom: 2px;
+}
+
+.drawer-sub {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.drawer-actions {
+  display: flex;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-5);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-alt);
+  flex-wrap: wrap;
+}
+
+.drawer-quick-btn {
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 4px 10px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 100px;
+  cursor: pointer;
+  transition: var(--t-fast);
+  color: var(--color-text);
+}
+
+.drawer-quick-btn:hover {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.drawer-search {
+  padding: var(--sp-3) var(--sp-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.drawer-search input {
+  width: 100%;
+  padding: 7px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-md);
+  font-size: 13px;
+}
+
+.drawer-search input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(31, 58, 48, 0.08);
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-3) 0;
+}
+
+.col-group {
+  padding: var(--sp-2) 0;
+}
+
+.col-group-header {
+  padding: var(--sp-3) var(--sp-5) var(--sp-2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--color-surface);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.col-group-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.col-group-toggle {
+  font-size: 11px;
+  color: var(--color-accent);
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.col-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 8px var(--sp-5);
+  cursor: pointer;
+  transition: background var(--t-fast);
+  user-select: none;
+}
+
+.col-item:hover {
+  background: var(--color-surface-alt);
+}
+
+.col-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.col-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.col-item-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.col-item-meta {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  font-family: var(--font-mono);
+  margin-top: 1px;
+}
+
+.drawer-footer {
+  padding: var(--sp-3) var(--sp-5);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--color-bg);
+}
+
+.drawer-counter {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.drawer-counter strong {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.drawer-close {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-md);
+  color: var(--color-text-secondary);
+  transition: var(--t-fast);
+}
+
+.drawer-close:hover {
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+}
+
+/* Responsive */
+@media (max-width: 960px) {
+  .app { grid-template-columns: 64px 1fr; }
+  .sidebar-brand, .nav-section-label, .sidebar-footer { display: none; }
+  .nav-item { justify-content: center; padding: 12px 0; }
+  .nav-item span { display: none; }
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .dash-grid { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid.cols-3 { grid-template-columns: 1fr; }
+  .form-group.span-2, .form-group.span-3 { grid-column: span 1; }
+  .login-shell { grid-template-columns: 1fr; }
+  .login-aside { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     PANTALLA DE LOGIN
+     ============================================================ -->
+<div class="login-shell" id="loginShell">
+  <aside class="login-aside">
+    <div class="login-brand">
+      <div class="login-brand-title">Alcaldía de Medellín</div>
+      <div class="login-brand-sub">Secretaría de Participación Ciudadana</div>
+    </div>
+
+    <div class="login-hero">
+      <h1>Matriz de<br><em>operación</em><br>logística</h1>
+      <p>Sistema integral de gestión y seguimiento de requerimientos logísticos, presupuestal y financiero para los proyectos de la SPC.</p>
+    </div>
+
+    <div class="login-meta">
+      <div><strong>Versión</strong>2026.1 · Demo</div>
+      <div><strong>Vigencia tarifario</strong>13 abril 2026</div>
+      <div><strong>Backend</strong>Firebase Firestore</div>
+    </div>
+  </aside>
+
+  <div class="login-form-wrap">
+    <div class="login-card">
+      <h2>Acceso al sistema</h2>
+      <p class="login-hint">Selecciona tu rol para ingresar a una vista de demostración con datos simulados.</p>
+
+      <div class="role-selector" id="roleSelector">
+        <button class="role-option" data-role="logistico">
+          <div class="role-icon">L</div>
+          <div class="role-info">
+            <div class="role-name">Rol Logístico</div>
+            <div class="role-desc">Crea y gestiona requerimientos. Edita momentos 1 y 2.</div>
+          </div>
+        </button>
+        <button class="role-option" data-role="financiero">
+          <div class="role-icon">F</div>
+          <div class="role-info">
+            <div class="role-name">Rol Financiero</div>
+            <div class="role-desc">Ejecuta cálculos, registra facturas y conciliación.</div>
+          </div>
+        </button>
+        <button class="role-option" data-role="contratista">
+          <div class="role-icon">C</div>
+          <div class="role-info">
+            <div class="role-name">Rol Contratista</div>
+            <div class="role-desc">Reporta presentación de soportes (Form. 462).</div>
+          </div>
+        </button>
+        <button class="role-option" data-role="revision">
+          <div class="role-icon">R</div>
+          <div class="role-info">
+            <div class="role-name">Rol Revisión</div>
+            <div class="role-desc">Carga soportes documentales y observaciones.</div>
+          </div>
+        </button>
+        <button class="role-option" data-role="admin">
+          <div class="role-icon">A</div>
+          <div class="role-info">
+            <div class="role-name">Administrador</div>
+            <div class="role-desc">Acceso total + auditoría y gestión de usuarios.</div>
+          </div>
+        </button>
+      </div>
+
+      <button class="btn-primary" id="btnLogin" disabled>Ingresar al sistema</button>
+
+      <div class="login-demo-tag">
+        Vista de demostración · Datos simulados · No persisten al cerrar.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     APP SHELL
+     ============================================================ -->
+<div class="app" id="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-title">Matriz logística</div>
+      <div class="sidebar-brand-sub">SPC · Medellín</div>
+    </div>
+
+    <div class="nav-section-label">Operación</div>
+    <button class="nav-item active" data-view="dashboard">
+      <svg class="nav-item-icon" viewBox="0 0 24 24"><path d="M3 12l2-2 4 4 8-8 4 4"/></svg>
+      <span>Resumen</span>
+    </button>
+    <button class="nav-item" data-view="requerimientos">
+      <svg class="nav-item-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg>
+      <span>Requerimientos</span>
+    </button>
+    <button class="nav-item" data-view="tarifario">
+      <svg class="nav-item-icon" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      <span>Tarifario</span>
+    </button>
+    <button class="nav-item" data-view="reportes">
+      <svg class="nav-item-icon" viewBox="0 0 24 24"><path d="M21 21H3M5 21V9M11 21V5M17 21v-9"/></svg>
+      <span>Reportes</span>
+    </button>
+
+    <div class="nav-section-label">Gestión</div>
+    <button class="nav-item" data-view="auditoria" id="navAuditoria">
+      <svg class="nav-item-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+      <span>Auditoría</span>
+    </button>
+
+    <div class="sidebar-footer">
+      <div>Versión 2026.1</div>
+      <div style="margin-top: 4px; opacity: 0.7;">v2026-05-19-r1</div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <h1 class="topbar-title" id="topbarTitle">Resumen</h1>
+      <div class="topbar-right">
+        <div class="topbar-status">
+          <div class="status-dot"></div>
+          <span>En línea</span>
+        </div>
+        <div class="user-chip" id="userChip" title="Cambiar rol">
+          <div class="user-avatar" id="userAvatar">DM</div>
+          <span id="userName">Daniel M.</span>
+          <span class="role-badge" id="userRoleBadge">Logístico</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODAL EDICIÓN
+     ============================================================ -->
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title-group">
+        <div class="modal-eyebrow" id="modalEyebrow">Requerimiento</div>
+        <div class="modal-title" id="modalTitle">Editar requerimiento</div>
+        <div class="modal-meta">
+          <div class="modal-meta-item"><span>OP</span><strong id="modalOp">—</strong></div>
+          <div class="modal-meta-item"><span>Creado</span><strong id="modalCreated">—</strong></div>
+          <div class="modal-meta-item"><span>Última edición</span><strong id="modalUpdated">—</strong></div>
+        </div>
+      </div>
+      <button class="modal-close" id="modalClose" title="Cerrar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="modal-tabs" id="modalTabs"></div>
+
+    <div class="modal-body" id="modalBody"></div>
+
+    <div class="modal-footer">
+      <div class="modal-footer-info">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+        <span id="modalFooterInfo">Los cálculos se recalculan en el servidor antes de guardar.</span>
+      </div>
+      <div class="modal-footer-actions">
+        <button class="btn-secondary" id="modalCancel">Cancelar</button>
+        <button class="btn-primary" style="width: auto; padding: 8px 18px;" id="modalSave">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     DRAWER DE COLUMNAS
+     ============================================================ -->
+<div class="drawer-backdrop" id="drawerBackdrop"></div>
+<aside class="drawer" id="columnsDrawer" aria-label="Configurar columnas visibles">
+  <div class="drawer-header">
+    <div class="drawer-title-group">
+      <div class="drawer-title">Configurar columnas</div>
+      <div class="drawer-sub">Activa las columnas de la hoja DETALLE EJECUCIÓN que quieres ver en la tabla.</div>
+    </div>
+    <button class="drawer-close" id="drawerCloseBtn" title="Cerrar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+
+  <div class="drawer-actions">
+    <button class="drawer-quick-btn" data-preset="default">Por defecto (9)</button>
+    <button class="drawer-quick-btn" data-preset="all">Mostrar todas (66)</button>
+    <button class="drawer-quick-btn" data-preset="none">Ninguna</button>
+    <button class="drawer-quick-btn" data-preset="M1">Solo M1</button>
+    <button class="drawer-quick-btn" data-preset="M2">Solo M2</button>
+    <button class="drawer-quick-btn" data-preset="M3">Solo M3</button>
+    <button class="drawer-quick-btn" data-preset="REV">Solo Revisión</button>
+  </div>
+
+  <div class="drawer-search">
+    <input type="text" placeholder="Buscar columna..." id="drawerSearchInput">
+  </div>
+
+  <div class="drawer-body" id="drawerBody"></div>
+
+  <div class="drawer-footer">
+    <div class="drawer-counter"><strong id="drawerCount">0</strong> de <strong>66</strong> columnas visibles</div>
+    <button class="btn-primary" style="width: auto; padding: 6px 16px; font-size: 12.5px;" id="drawerApplyBtn">Hecho</button>
+  </div>
+</aside>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
+  <span id="toastMsg">Guardado</span>
+</div>
+
+<script>
+/* ============================================================
+   DATOS DE DEMOSTRACIÓN
+   ============================================================ */
+
+const CATALOGOS = {
+  subsecretarias: ['FORMACIÓN', 'ORSO', 'PL Y PP', 'DESPACHO', 'SPC'],
+  enlaces: ['LUISA FRANCO', 'JEFERSSON MARÍN', 'FARID VANEGAS', 'PAOLA QUINTERO', 'LAURA DANIELA TORO', 'LAURA ISABEL TORO', 'SANTIAGO JARAMILLO', 'JOHN ARIAS'],
+  estadosTramite: ['En subsanación', 'En cotización', 'A ejecución', 'Cancelado', 'Suspendido', 'Sin recibir', 'Ejecutado'],
+  estadosReq: ['Ejecutado', 'No ejecutado por el proveedor', 'Cancelado', 'Cancelado por incumplimiento', 'A ejecución'],
+  estadosEvidencia: ['OK', 'PENDIENTE', 'EN SUBSANACIÓN', 'CANCELADO'],
+  comunas: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '50', '60', '70', '80', '90', '99', 'ORD', 'PP'],
+  tiposRecurso: ['ORD', 'PP'],
+  tarifasImpuesto: [0, 0.05, 0.08, 0.16, 0.19]
+};
+
+const PROYECTOS = [
+  { codigo: '240183', nombre: 'Apoyo técnico a nuevas expresiones organizativas', subsec: 'PL Y PP' },
+  { codigo: '240184', nombre: 'Apoyo técnico y material a las organizaciones sociales', subsec: 'ORSO' },
+  { codigo: '240185', nombre: 'Consolidación del Sistema de Servicio al Ciudadano', subsec: 'PL Y PP' },
+  { codigo: '240186', nombre: 'Control Social a la gestión pública', subsec: 'FORMACIÓN' },
+  { codigo: '240187', nombre: 'Desarrollo de estrategias de formación', subsec: 'FORMACIÓN' },
+  { codigo: '240188', nombre: 'Fortalecimiento de la Gestión Comunitaria', subsec: 'ORSO' },
+  { codigo: '240189', nombre: 'Implementación de estrategias de articulación', subsec: 'FORMACIÓN' },
+  { codigo: '240190', nombre: 'Implementación de la Política Pública', subsec: 'PL Y PP' },
+  { codigo: '240191', nombre: 'Innovación pública y social en el territorio', subsec: 'FORMACIÓN' },
+  { codigo: '240193', nombre: 'Mejoramiento de la Presupuestación Participativa', subsec: 'PL Y PP' },
+  { codigo: '250007', nombre: 'Fortalecimiento a Organizaciones Sociales', subsec: 'ORSO' },
+  { codigo: '250009', nombre: 'Fortalecimiento al Plan de Trabajo', subsec: 'ORSO' }
+];
+
+// Muestra representativa del tarifario (en producción serían 1.004 items en Firestore)
+const TARIFARIO = [
+  // Categoría 1 - Alimentación
+  { id: 'AL 0004', cat: 1, catName: 'Alimentación', desc: 'Botella de agua', carac: 'Cantidad: 280-300ml. Envase: botella plástica.', min: 1, max: 50, medida: 'Unidad', precio: 3656.15 },
+  { id: 'AL 0005', cat: 1, catName: 'Alimentación', desc: 'Botella de agua', carac: 'Cantidad: 280-300ml. Envase: botella plástica.', min: 51, max: 100, medida: 'Unidad', precio: 3546.45 },
+  { id: 'AL 0006', cat: 1, catName: 'Alimentación', desc: 'Botella de agua', carac: 'Cantidad: 280-300ml. Envase: botella plástica.', min: 101, max: 10000, medida: 'Unidad', precio: 3439.95 },
+  { id: 'AL 0007', cat: 1, catName: 'Alimentación', desc: 'Botella de agua 500ml', carac: 'Cantidad: 500ml. Envase: botella plástica.', min: 1, max: 50, medida: 'Unidad', precio: 4508.15 },
+  { id: 'AL 0008', cat: 1, catName: 'Alimentación', desc: 'Botella de agua 500ml', carac: 'Cantidad: 500ml. Envase: botella plástica.', min: 51, max: 100, medida: 'Unidad', precio: 4372.89 },
+  { id: 'AL 0025', cat: 1, catName: 'Alimentación', desc: 'Jugo de fruta natural', carac: 'Servido en vaso individual de 250ml', min: 1, max: 50, medida: 'Unidad', precio: 9531.75 },
+  { id: 'AL 0026', cat: 1, catName: 'Alimentación', desc: 'Jugo de fruta natural', carac: 'Servido en vaso individual de 250ml', min: 51, max: 100, medida: 'Unidad', precio: 9246.33 },
+  { id: 'AL 0042', cat: 1, catName: 'Alimentación', desc: 'Estación de café con máquina', carac: 'Máquina dispensadora automática + insumos por 4 horas', min: 1, max: 100, medida: 'Unidad', precio: 471600 },
+  { id: 'AL 0045', cat: 1, catName: 'Alimentación', desc: 'Estación de café atendida', carac: 'Café, agua, aromática + persona de atención por 4h', min: 1, max: 100, medida: 'Unidad', precio: 262000 },
+
+  // Categoría 2 - Transporte
+  { id: 'TR 0001', cat: 2, catName: 'Transporte', desc: 'Transporte Aeropuerto JMC', carac: 'Automóvil modelo 2016+. Ida y regreso.', min: 1, max: 100, medida: 'Ida y regreso', precio: 468720 },
+  { id: 'TR 0002', cat: 2, catName: 'Transporte', desc: 'Transporte Aeropuerto JMC', carac: 'Van modelo 2016+. Capacidad 12 personas.', min: 1, max: 100, medida: 'Ida y regreso', precio: 779030 },
+  { id: 'TR 0004', cat: 2, catName: 'Transporte', desc: 'Transporte urbano automóvil', carac: 'Automóvil. Recorrido 12 horas.', min: 1, max: 100, medida: 'Recorrido 12h', precio: 495866 },
+  { id: 'TR 0008', cat: 2, catName: 'Transporte', desc: 'Transporte urbano por hora', carac: 'Automóvil modelo 2016+.', min: 1, max: 100, medida: 'Hora', precio: 43400 },
+  { id: 'TR 0009', cat: 2, catName: 'Transporte', desc: 'Transporte urbano van por hora', carac: 'Van modelo 2016+. Capacidad 12 personas.', min: 1, max: 100, medida: 'Hora', precio: 108500 },
+
+  // Categoría 3 - Impresión
+  { id: 'IM 0001', cat: 3, catName: 'Impresión', desc: 'Impresión de volantes', carac: 'Media carta 21,59 x 14 cm, propalcote 115gr', min: 1, max: 1000, medida: 'Unidad', precio: 186.35 },
+  { id: 'IM 0002', cat: 3, catName: 'Impresión', desc: 'Impresión de volantes', carac: 'Media carta 21,59 x 14 cm, propalcote 115gr', min: 1001, max: 5000, medida: 'Unidad', precio: 147.80 },
+  { id: 'IM 0006', cat: 3, catName: 'Impresión', desc: 'Afiche 35x50 cm', carac: 'Propalcote 115gr. Color 4x0.', min: 1, max: 5000, medida: 'Unidad', precio: 1037.80 },
+  { id: 'IM 0014', cat: 3, catName: 'Impresión', desc: 'Impresión de individuales', carac: 'Tamaño tabloide. Papel earth pact.', min: 1, max: 1000, medida: 'Unidad', precio: 778.62 },
+
+  // Categoría 4 - Suministros
+  { id: 'SU 0001', cat: 4, catName: 'Suministros', desc: 'Cuaderno argollado', carac: 'Tamaño media carta, 80 hojas rayadas', min: 1, max: 500, medida: 'Unidad', precio: 8500 },
+  { id: 'SU 0002', cat: 4, catName: 'Suministros', desc: 'Lapiceros tinta negra', carac: 'Tipo BIC o equivalente', min: 1, max: 1000, medida: 'Unidad', precio: 1200 },
+  { id: 'SU 0015', cat: 4, catName: 'Suministros', desc: 'Bolsa ecológica con logo', carac: 'Tela no tejida, 35x40cm, impresión 1 tinta', min: 50, max: 5000, medida: 'Unidad', precio: 4800 },
+
+  // Categoría 5 - Mobiliario
+  { id: 'MO 0001', cat: 5, catName: 'Mobiliario', desc: 'Carpa 3x3 m', carac: 'Carpa tipo plegable, color blanco, con paredes', min: 1, max: 50, medida: 'Día', precio: 180000 },
+  { id: 'MO 0008', cat: 5, catName: 'Mobiliario', desc: 'Mesa rectangular plegable', carac: '1.80m x 0.75m, plástica reforzada', min: 1, max: 100, medida: 'Día', precio: 28000 },
+  { id: 'MO 0012', cat: 5, catName: 'Mobiliario', desc: 'Silla rimax blanca', carac: 'Plástica con respaldo, apilable', min: 1, max: 500, medida: 'Día', precio: 3500 },
+
+  // Categoría 7 - Técnico
+  { id: 'TE 0001', cat: 7, catName: 'Técnico', desc: 'Sonido para evento mediano', carac: '2 cabinas amplificadas 500W, mezclador, 2 micrófonos. 4 horas.', min: 1, max: 50, medida: 'Servicio', precio: 580000 },
+  { id: 'TE 0015', cat: 7, catName: 'Técnico', desc: 'Videobeam con pantalla', carac: '4000 lúmenes + pantalla 2x2m + cables. 4 horas.', min: 1, max: 30, medida: 'Servicio', precio: 320000 },
+  { id: 'TE 0089', cat: 7, catName: 'Técnico', desc: 'Camarógrafo + edición', carac: 'Cámara FullHD, micro lavalier, edición básica 5min', min: 1, max: 20, medida: 'Servicio', precio: 850000 }
+];
+
+const CATEGORIAS = [
+  { num: 1, name: 'Alimentación', count: 141 },
+  { num: 2, name: 'Transporte', count: 46 },
+  { num: 3, name: 'Impresión', count: 79 },
+  { num: 4, name: 'Suministros', count: 144 },
+  { num: 5, name: 'Mobiliario', count: 96 },
+  { num: 6, name: 'Personal y varios', count: 22 },
+  { num: 7, name: 'Técnico', count: 375 },
+  { num: 8, name: 'Backline', count: 83 },
+  { num: 9, name: 'Salud', count: 5 },
+  { num: 10, name: 'Costos fijos', count: 13 }
+];
+
+// Requerimientos demo (en producción vienen de Firestore)
+const REQUERIMIENTOS = [
+  {
+    id: 'r-001', op: '1_ORSO_ORD', opSeq: 1,
+    m1: { subsec: 'ORSO', enlace: 'JOHN ARIAS', fechaElab: '2026-04-15' },
+    m2: { evento: 'Encuentro de organizaciones sociales comuna 5', proyecto: '240186', comuna: '5', mga: '1.1.1 Realizar proceso formativo', actDet: 'Realizar Un Proceso Formativo',
+          instancia: 'Mesa Comunitaria Comuna 5', remDia: '20', remMes: '04', remAno: '2026',
+          fechaEntrega: '2026-05-22', horaEntrega: '09:00', fechaMontaje: '2026-05-22', fechaDesmontaje: '2026-05-22',
+          lugar: 'Casa de la Cultura Castilla', persona: 'Mary Luz González', contacto: '300-555-1234',
+          tarifario: 'AL 0005', desc: 'Botella de agua', medida: 'Unidad', cantidad: 80, obs: 'Para asistentes confirmados', evSpc: 'OK', evOper: 'OK' },
+    m3: { idInterno: 'P-2026-0001', precio: 3546.45, subtotal: 283716, tarifaImp: 0.19, valorImp: 53906, totalEjec: 337622, honorarios: 32074, ivaHon: 6094, totalHon: 38168, gmf: 1350, estampilla: 6752, valorEjec: 375790,
+          proveedor: 'Distribuidora EXCO SAS', nit: '900.123.456-7', factura: 'FE-2026-4521', compEgreso: 'CE-2026-1102',
+          reporteNov: 'Ejecución sin novedades. Asistencia: 78/80.',
+          estadoReq: 'Ejecutado', conciliacion: 'OK', estadoFactHon: 'OK', pagoHon: 'PH-2026-0034', tipoRec: 'ORD' },
+    estadoTramite: 'Ejecutado'
+  },
+  {
+    id: 'r-002', op: '2_FORM_ORD', opSeq: 2,
+    m1: { subsec: 'FORMACIÓN', enlace: 'LAURA DANIELA TORO', fechaElab: '2026-04-18' },
+    m2: { evento: 'JORNADA ESPECIAL JÓVENES LÍDERES', proyecto: '240191', comuna: '8', mga: '2.1.1 Realizar procesos pedagógicos', actDet: 'Brindar apoyo logístico en el desarrollo',
+          instancia: 'Red de Jóvenes Líderes Comuna 8', remDia: '23', remMes: '04', remAno: '2026',
+          fechaEntrega: '2026-05-25', horaEntrega: '08:00', fechaMontaje: '2026-05-25', fechaDesmontaje: '2026-05-25',
+          lugar: 'Centro Cultural Moravia', persona: 'Camilo Restrepo', contacto: '301-555-8762',
+          tarifario: 'AL 0042', desc: 'Estación de café con máquina', medida: 'Unidad', cantidad: 1, obs: 'Para 50 asistentes', evSpc: 'OK', evOper: 'OK' },
+    m3: { idInterno: 'P-2026-0002', precio: 471600, subtotal: 471600, tarifaImp: 0.19, valorImp: 89604, totalEjec: 561204, honorarios: 53314, ivaHon: 10130, totalHon: 63444, gmf: 2245, estampilla: 11224, valorEjec: 624648,
+          proveedor: 'Café Casa Solera', nit: '901.456.789-1', factura: 'FE-2026-2018', compEgreso: 'CE-2026-1118',
+          reporteNov: 'Asistencia: 52. Operador llegó 15 min tarde por tráfico.',
+          estadoReq: 'Ejecutado', conciliacion: 'OK', estadoFactHon: 'OK', pagoHon: 'PH-2026-0041', tipoRec: 'ORD' },
+    estadoTramite: 'Ejecutado'
+  },
+  {
+    id: 'r-003', op: '3_PLYPP_ORD', opSeq: 3,
+    m1: { subsec: 'PL Y PP', enlace: 'FARID VANEGAS', fechaElab: '2026-04-20' },
+    m2: { evento: 'Encuentro articulación asocomunales comuna 7', proyecto: '240193', comuna: '7', mga: '2.2.1 Realizar la priorización', actDet: 'Apoyar logísticamente las fases del PP',
+          instancia: 'Asocomunales Comuna 7 Robledo', remDia: '25', remMes: '04', remAno: '2026',
+          fechaEntrega: '2026-06-10', horaEntrega: '07:00', fechaMontaje: '2026-06-10', fechaDesmontaje: '2026-06-10',
+          lugar: 'JAL Comuna 7 - Robledo', persona: 'Liliana Bedoya', contacto: '302-555-1199',
+          tarifario: 'TR 0009', desc: 'Transporte urbano van por hora', medida: 'Hora', cantidad: 8, obs: 'Recorrido por sedes comunales', evSpc: 'PENDIENTE', evOper: 'PENDIENTE' },
+    m3: { idInterno: 'P-2026-0003', precio: 108500, subtotal: 868000, tarifaImp: 0.19, valorImp: 164920, totalEjec: 1032920, honorarios: 98127, ivaHon: 18644, totalHon: 116771, gmf: 4132, estampilla: 20658, valorEjec: 1149691,
+          proveedor: 'Transportes del Valle', nit: '900.789.123-4', factura: '', compEgreso: '',
+          reporteNov: '',
+          estadoReq: 'A ejecución', conciliacion: 'PENDIENTE', estadoFactHon: 'PENDIENTE', pagoHon: '', tipoRec: 'PP' },
+    estadoTramite: 'A ejecución'
+  },
+  {
+    id: 'r-004', op: '4_FORM_ORD', opSeq: 4,
+    m1: { subsec: 'FORMACIÓN', enlace: 'JEFERSSON MARÍN', fechaElab: '2026-04-22' },
+    m2: { evento: 'Taller de formación líderes comunales', proyecto: '240187', comuna: '13', mga: '1.1.1 Realizar procesos formativos', actDet: 'Brindar apoyo logístico en talleres',
+          fechaEntrega: '2026-06-05', lugar: 'Sede SPC', persona: 'Jhonatan Pérez', contacto: '300-555-4422',
+          tarifario: 'IM 0001', desc: 'Impresión de volantes', medida: 'Unidad', cantidad: 800, obs: 'Material informativo', evSpc: 'PENDIENTE', evOper: 'PENDIENTE' },
+    m3: { precio: 186.35, subtotal: 149080, tarifaImp: 0.19, valorImp: 28325, totalEjec: 177405, honorarios: 16853, ivaHon: 3202, totalHon: 20055, gmf: 710, estampilla: 3548, valorEjec: 197460,
+          proveedor: '', nit: '', factura: '', estadoReq: 'A ejecución', conciliacion: 'PENDIENTE', tipoRec: 'ORD' },
+    estadoTramite: 'En cotización'
+  },
+  {
+    id: 'r-005', op: '5_ORSO_ORD', opSeq: 5,
+    m1: { subsec: 'ORSO', enlace: 'PAOLA QUINTERO', fechaElab: '2026-04-23' },
+    m2: { evento: 'Sesión ordinaria JAL Comuna 4', proyecto: '240190', comuna: '4', mga: '1.1.5 Realizar sesiones ordinarias', actDet: 'Realizar apoyo logístico en sesiones',
+          instancia: 'JAL Comuna 4 - Aranjuez', remDia: '26', remMes: '04', remAno: '2026',
+          fechaEntrega: '2026-05-30', horaEntrega: '14:00', fechaMontaje: '2026-05-30', fechaDesmontaje: '2026-05-30',
+          lugar: 'JAL Comuna 4 - Aranjuez', persona: 'Pedro Ramírez', contacto: '301-555-2266',
+          tarifario: 'AL 0007', desc: 'Botella de agua 500ml', medida: 'Unidad', cantidad: 35, obs: 'Para asistentes a sesión', evSpc: 'OK', evOper: 'OK' },
+    m3: { idInterno: 'P-2026-0005', precio: 4508.15, subtotal: 157785, tarifaImp: 0.19, valorImp: 29979, totalEjec: 187764, honorarios: 17838, ivaHon: 3389, totalHon: 21227, gmf: 751, estampilla: 3755, valorEjec: 208991,
+          proveedor: 'Distribuidora EXCO SAS', nit: '900.123.456-7', factura: 'FE-2026-4533', compEgreso: 'CE-2026-1145',
+          reporteNov: 'Ejecución normal.',
+          estadoReq: 'Ejecutado', conciliacion: 'OK', estadoFactHon: 'OK', pagoHon: 'PH-2026-0067', tipoRec: 'ORD' },
+    estadoTramite: 'Ejecutado'
+  },
+  {
+    id: 'r-006', op: '6_FORM_ORD', opSeq: 6,
+    m1: { subsec: 'FORMACIÓN', enlace: 'SANTIAGO JARAMILLO', fechaElab: '2026-04-25' },
+    m2: { evento: 'Foro distrital de juventudes', proyecto: '240191', comuna: '99', mga: '2.1.1 Realizar procesos pedagógicos', actDet: 'Brindar apoyo logístico en foros',
+          fechaEntrega: '2026-06-18', lugar: 'Centro de Convenciones Plaza Mayor', persona: 'Sofía Vargas', contacto: '300-555-7733',
+          tarifario: 'TE 0001', desc: 'Sonido para evento mediano', medida: 'Servicio', cantidad: 1, obs: '4 horas + montaje', evSpc: 'EN SUBSANACIÓN', evOper: 'PENDIENTE' },
+    m3: { precio: 580000, subtotal: 580000, tarifaImp: 0.19, valorImp: 110200, totalEjec: 690200, honorarios: 65569, ivaHon: 12458, totalHon: 78027, gmf: 2761, estampilla: 13804, valorEjec: 768227,
+          proveedor: 'Audio Pro Medellín', nit: '900.555.222-1', factura: '', estadoReq: 'A ejecución', conciliacion: 'EN SUBSANACIÓN', tipoRec: 'ORD' },
+    estadoTramite: 'En subsanación'
+  },
+  {
+    id: 'r-007', op: '7_PLYPP_PP', opSeq: 7,
+    m1: { subsec: 'PL Y PP', enlace: 'FARID VANEGAS', fechaElab: '2026-04-26' },
+    m2: { evento: 'Asamblea de priorización PP Comuna 1', proyecto: '240193', comuna: '1', mga: '2.2.1 Realizar la priorización', actDet: 'Apoyar logísticamente las fases del PP',
+          fechaEntrega: '2026-06-22', lugar: 'Colegio Popular Comuna 1', persona: 'Marcela Quintero', contacto: '301-555-9988',
+          tarifario: 'MO 0012', desc: 'Silla rimax blanca', medida: 'Día', cantidad: 150, obs: 'Para 150 asambleístas', evSpc: 'PENDIENTE', evOper: 'PENDIENTE' },
+    m3: { precio: 3500, subtotal: 525000, tarifaImp: 0.19, valorImp: 99750, totalEjec: 624750, honorarios: 59351, ivaHon: 11277, totalHon: 70628, gmf: 2499, estampilla: 12495, valorEjec: 695378,
+          proveedor: '', nit: '', factura: '', estadoReq: 'A ejecución', conciliacion: 'PENDIENTE', tipoRec: 'PP' },
+    estadoTramite: 'A ejecución'
+  },
+  {
+    id: 'r-008', op: '8_ORSO_ORD', opSeq: 8,
+    m1: { subsec: 'ORSO', enlace: 'JOHN ARIAS', fechaElab: '2026-04-28' },
+    m2: { evento: 'Encuentro intersectorial organizaciones', proyecto: '250007', comuna: '10', mga: '1.1.10 Desarrollar estrategias', actDet: 'Desarrollar estrategias de formación',
+          fechaEntrega: '2026-06-15', lugar: 'Parque Explora', persona: 'Diana Cárdenas', contacto: '300-555-3344',
+          tarifario: 'AL 0045', desc: 'Estación de café atendida', medida: 'Unidad', cantidad: 2, obs: 'Dos estaciones, mañana y tarde', evSpc: 'PENDIENTE', evOper: 'PENDIENTE' },
+    m3: { precio: 262000, subtotal: 524000, tarifaImp: 0.19, valorImp: 99560, totalEjec: 623560, honorarios: 59238, ivaHon: 11255, totalHon: 70493, gmf: 2494, estampilla: 12471, valorEjec: 694053,
+          proveedor: 'Café Casa Solera', nit: '901.456.789-1', factura: '', estadoReq: 'A ejecución', conciliacion: 'PENDIENTE', tipoRec: 'ORD' },
+    estadoTramite: 'En cotización'
+  },
+  {
+    id: 'r-009', op: '9_DESPACHO_ORD', opSeq: 9,
+    m1: { subsec: 'DESPACHO', enlace: 'LAURA ISABEL TORO', fechaElab: '2026-04-29' },
+    m2: { evento: 'Reunión gabinete sectorial', proyecto: '240192', comuna: '99', mga: '1.1.3 Realizar seguimiento', actDet: 'Realizar apoyo logístico en seguimiento',
+          fechaEntrega: '2026-05-28', lugar: 'Sede SPC Despacho', persona: 'Asistente Despacho', contacto: '304-555-1100',
+          tarifario: 'AL 0006', desc: 'Botella de agua', medida: 'Unidad', cantidad: 25, obs: 'Reunión interna', evSpc: 'OK', evOper: 'OK' },
+    m3: { precio: 3439.95, subtotal: 85999, tarifaImp: 0.19, valorImp: 16340, totalEjec: 102339, honorarios: 9722, ivaHon: 1847, totalHon: 11569, gmf: 409, estampilla: 2047, valorEjec: 113908,
+          proveedor: 'Distribuidora EXCO SAS', nit: '900.123.456-7', factura: 'FE-2026-4541', estadoReq: 'Ejecutado', conciliacion: 'OK', tipoRec: 'ORD' },
+    estadoTramite: 'Ejecutado'
+  },
+  {
+    id: 'r-010', op: '10_FORM_PP', opSeq: 10,
+    m1: { subsec: 'FORMACIÓN', enlace: 'LAURA DANIELA TORO', fechaElab: '2026-05-02' },
+    m2: { evento: 'Taller formación PP - Acuerdos comunitarios', proyecto: '240187', comuna: '8', mga: '1.1.1 Realizar procesos formativos', actDet: 'Brindar apoyo logístico',
+          fechaEntrega: '2026-06-12', lugar: 'Sede comunal Villa Hermosa', persona: 'Catalina Ortiz', contacto: '305-555-7711',
+          tarifario: 'TE 0015', desc: 'Videobeam con pantalla', medida: 'Servicio', cantidad: 1, obs: 'Para 40 asistentes', evSpc: 'PENDIENTE', evOper: 'PENDIENTE' },
+    m3: { precio: 320000, subtotal: 320000, tarifaImp: 0.19, valorImp: 60800, totalEjec: 380800, honorarios: 36176, ivaHon: 6873, totalHon: 43049, gmf: 1523, estampilla: 7616, valorEjec: 423849,
+          proveedor: '', nit: '', factura: '', estadoReq: 'A ejecución', conciliacion: 'PENDIENTE', tipoRec: 'PP' },
+    estadoTramite: 'En cotización'
+  },
+  {
+    id: 'r-011', op: '11_ORSO_ORD', opSeq: 11,
+    m1: { subsec: 'ORSO', enlace: 'JEFERSSON MARÍN', fechaElab: '2026-05-03' },
+    m2: { evento: 'Encuentro asociaciones campesinas Corregimiento 60', proyecto: '250009', comuna: '60', mga: '1.1.4 Realizar acompañamiento', actDet: 'Brindar acompañamiento técnico',
+          fechaEntrega: '2026-06-08', lugar: 'San Cristóbal - Corregimental', persona: 'Don Aníbal Mejía', contacto: '301-555-4400',
+          tarifario: 'TR 0001', desc: 'Transporte Aeropuerto JMC', medida: 'Ida y regreso', cantidad: 1, obs: 'Recoger delegación rural', evSpc: 'CANCELADO', evOper: 'CANCELADO' },
+    m3: { precio: 468720, subtotal: 468720, tarifaImp: 0.19, valorImp: 89057, totalEjec: 557777, honorarios: 52989, ivaHon: 10068, totalHon: 63057, gmf: 2231, estampilla: 11156, valorEjec: 620834,
+          proveedor: '', nit: '', factura: '', estadoReq: 'Cancelado', conciliacion: 'N/A', tipoRec: 'ORD' },
+    estadoTramite: 'Cancelado'
+  },
+  {
+    id: 'r-012', op: '12_PLYPP_ORD', opSeq: 12,
+    m1: { subsec: 'PL Y PP', enlace: 'FARID VANEGAS', fechaElab: '2026-05-04' },
+    m2: { evento: 'Mesa de trabajo seguimiento PP 2026', proyecto: '240185', comuna: '99', mga: '2.1.1 Realizar encuentros', actDet: 'Realizar encuentros de control',
+          fechaEntrega: '2026-06-20', lugar: 'Sede SPC', persona: 'Comité PP', contacto: '300-555-0000',
+          tarifario: 'AL 0042', desc: 'Estación de café con máquina', medida: 'Unidad', cantidad: 1, obs: 'Para 30 asistentes', evSpc: 'OK', evOper: 'PENDIENTE' },
+    m3: { precio: 471600, subtotal: 471600, tarifaImp: 0.19, valorImp: 89604, totalEjec: 561204, honorarios: 53314, ivaHon: 10130, totalHon: 63444, gmf: 2245, estampilla: 11224, valorEjec: 624648,
+          proveedor: 'Café Casa Solera', nit: '901.456.789-1', factura: '', estadoReq: 'A ejecución', conciliacion: 'PENDIENTE', tipoRec: 'ORD' },
+    estadoTramite: 'A ejecución'
+  }
+];
+
+// Auditoría demo
+const AUDITORIA = [
+  { ts: '2026-05-19 14:32', user: 'Daniel M.', role: 'Logístico', action: 'Actualizó requerimiento', details: 'OP 12_PLYPP_ORD — Cambió cantidad de 1 a 2' },
+  { ts: '2026-05-19 14:28', user: 'Catalina R.', role: 'Financiero', action: 'Marcó como Ejecutado', details: 'OP 9_DESPACHO_ORD — Estado conciliación: OK' },
+  { ts: '2026-05-19 13:45', user: 'Daniel M.', role: 'Logístico', action: 'Creó requerimiento', details: 'OP 12_PLYPP_ORD — Mesa de trabajo seguimiento PP 2026' },
+  { ts: '2026-05-19 11:20', user: 'Carlos H.', role: 'Revisión', action: 'Adjuntó soporte', details: 'OP 2_FORM_ORD — Lista de chequeo cargada' },
+  { ts: '2026-05-19 10:15', user: 'Sistema', role: 'Auto', action: 'Recalculó cálculos financieros', details: 'OP 6_FORM_ORD — Por cambio de tarifa de impuesto 16% → 19%' },
+  { ts: '2026-05-18 17:02', user: 'Daniel M.', role: 'Logístico', action: 'Actualizó requerimiento', details: 'OP 10_FORM_PP — Cambió fecha de entrega' },
+  { ts: '2026-05-18 16:30', user: 'Catalina R.', role: 'Financiero', action: 'Registró factura', details: 'OP 5_ORSO_ORD — Factura FE-2026-4533' },
+  { ts: '2026-05-18 15:00', user: 'Admin', role: 'Admin', action: 'Asignó rol', details: 'Usuario Luisa F. — Rol Logístico' }
+];
+
+/* ============================================================
+   COLUMNAS DE DETALLE EJECUCIÓN — las 66 columnas reales del Excel
+   con accesor para renderizado dinámico en la tabla
+   ============================================================ */
+
+const MOMENTOS_LABEL = {
+  M1: 'Primer momento · Logístico',
+  M2: 'Segundo momento · Logístico',
+  M3: 'Tercer momento · Financiero',
+  CONT: 'Contratista',
+  REV: 'Revisión'
+};
+
+const MOMENTOS_LABEL_MODAL = {
+  m1: 'Primer momento · Datos básicos (Logístico)',
+  m2: 'Segundo momento · Evento y tarifario (Logístico)',
+  m3: 'Tercer momento · Cálculos financieros (Financiero)',
+  contratista: 'Contratista · Presentación 462',
+  revision: 'Revisión · Documentos y soportes'
+};
+
+const COLUMNAS_DETALLE = [
+  // === Primer momento — Logístico ===
+  { id: 'op',              col: 'A',  m: 'M1', label: 'OP',                          def: true,  mono: true,  acc: r => esc(r.op) },
+  { id: 'subsec',          col: 'B',  m: 'M1', label: 'Subsecretaría',               def: true,               acc: r => esc(r.m1.subsec) },
+  { id: 'enlace',          col: 'C',  m: 'M1', label: 'Enlace Logístico',            def: false,              acc: r => esc(r.m1.enlace) },
+  { id: 'fechaElab',       col: 'D',  m: 'M1', label: 'Fecha Elaboración',           def: false,              acc: r => fmt.fecha(r.m1.fechaElab) },
+  // === Segundo momento — Logístico (E-O) ===
+  { id: 'remDia',          col: 'E',  m: 'M2', label: 'Remisión op. · Día',          def: false, mono: true,  acc: r => r.m2.remDia  || '—' },
+  { id: 'remMes',          col: 'F',  m: 'M2', label: 'Remisión op. · Mes',          def: false, mono: true,  acc: r => r.m2.remMes  || '—' },
+  { id: 'remAno',          col: 'G',  m: 'M2', label: 'Remisión op. · Año',          def: false, mono: true,  acc: r => r.m2.remAno  || '—' },
+  { id: 'estadoTramite',   col: 'H',  m: 'M2', label: 'Estado trámite',              def: true,  pill: true,  acc: r => r.estadoTramite },
+  { id: 'evento',          col: 'I',  m: 'M2', label: 'Evento',                      def: true,  trunc: 220,  acc: r => esc(r.m2.evento) },
+  { id: 'instancia',       col: 'J',  m: 'M2', label: 'Instancia / Beneficiario',    def: false, trunc: 180,  acc: r => esc(r.m2.instancia || '—') },
+  { id: 'nombreProy',      col: 'K',  m: 'M2', label: 'Nombre Proyecto',             def: false, trunc: 220,  acc: r => esc(PROYECTOS.find(p => p.codigo === r.m2.proyecto)?.nombre || '—') },
+  { id: 'proyecto',        col: 'L',  m: 'M2', label: 'Cód. Proyecto',               def: true,  mono: true,  acc: r => esc(r.m2.proyecto) },
+  { id: 'comuna',          col: 'M',  m: 'M2', label: 'Comuna',                      def: true,               acc: r => esc(r.m2.comuna) },
+  { id: 'mga',             col: 'N',  m: 'M2', label: 'Actividad MGA',               def: false, trunc: 200,  acc: r => esc(r.m2.mga) },
+  { id: 'actDet',          col: 'O',  m: 'M2', label: 'Actividad Detallada MGA',     def: false, trunc: 240,  acc: r => esc(r.m2.actDet) },
+  // === ID interno (Tercer momento — Financiero) ===
+  { id: 'idInterno',       col: 'P',  m: 'M3', label: 'ID interno',                  def: false, mono: true,  acc: r => esc(r.m3.idInterno || '—') },
+  // === Segundo momento — Logístico (Q-AB) ===
+  { id: 'lugar',           col: 'Q',  m: 'M2', label: 'Lugar del Evento',            def: false, trunc: 200,  acc: r => esc(r.m2.lugar) },
+  { id: 'fechaEntrega',    col: 'R',  m: 'M2', label: 'Fecha Entrega',               def: true,               acc: r => fmt.fecha(r.m2.fechaEntrega) },
+  { id: 'horaEntrega',     col: 'S',  m: 'M2', label: 'Hora Entrega',                def: false, mono: true,  acc: r => esc(r.m2.horaEntrega || '08:00') },
+  { id: 'fechaMontaje',    col: 'T',  m: 'M2', label: 'Fecha Montaje',               def: false,              acc: r => fmt.fecha(r.m2.fechaMontaje || r.m2.fechaEntrega) },
+  { id: 'fechaDesmontaje', col: 'U',  m: 'M2', label: 'Fecha Desmontaje',            def: false,              acc: r => fmt.fecha(r.m2.fechaDesmontaje || r.m2.fechaEntrega) },
+  { id: 'persona',         col: 'V',  m: 'M2', label: 'Persona que recibe',          def: false,              acc: r => esc(r.m2.persona) },
+  { id: 'contacto',        col: 'W',  m: 'M2', label: 'Contacto',                    def: false, mono: true,  acc: r => esc(r.m2.contacto) },
+  { id: 'codTarif',        col: 'X',  m: 'M2', label: 'Cód. Tarifario',              def: false, mono: true,  acc: r => esc(r.m2.tarifario) },
+  { id: 'desc',            col: 'Y',  m: 'M2', label: 'Descripción Requerimiento',   def: false, trunc: 220,  acc: r => esc(r.m2.desc) },
+  { id: 'obs',             col: 'Z',  m: 'M2', label: 'Obs. Requerimiento',          def: false, trunc: 200,  acc: r => esc(r.m2.obs) },
+  { id: 'medida',          col: 'AA', m: 'M2', label: 'Unidad de Medida',            def: false,              acc: r => esc(r.m2.medida) },
+  { id: 'cantidad',        col: 'AB', m: 'M2', label: 'Cantidad',                    def: true,  num: true,   acc: r => fmt.num(r.m2.cantidad) },
+  // === Tercer momento — Financiero (AC-AQ) ===
+  { id: 'precio',          col: 'AC', m: 'M3', label: 'Precio compra/u',             def: false, num: true,   acc: r => fmt.cop(r.m3.precio) },
+  { id: 'subtotal',        col: 'AD', m: 'M3', label: 'Subtotal compra',             def: false, num: true,   acc: r => fmt.cop(r.m3.subtotal) },
+  { id: 'tarifaImp',       col: 'AE', m: 'M3', label: 'Tarifa Impto',                def: false, num: true,   acc: r => fmt.pct(r.m3.tarifaImp) },
+  { id: 'valorImp',        col: 'AF', m: 'M3', label: 'Valor Impto',                 def: false, num: true,   acc: r => fmt.cop(r.m3.valorImp) },
+  { id: 'totalEjec',       col: 'AG', m: 'M3', label: 'Total ejec. c/Impto',         def: false, num: true,   acc: r => fmt.cop(r.m3.totalEjec) },
+  { id: 'pctHon',          col: 'AH', m: 'M3', label: '% Honorarios',                def: false, num: true,   acc: r => fmt.cop(r.m3.honorarios) },
+  { id: 'ivaHon',          col: 'AI', m: 'M3', label: 'IVA honorarios',              def: false, num: true,   acc: r => fmt.cop(r.m3.ivaHon) },
+  { id: 'totalHon',        col: 'AJ', m: 'M3', label: 'TOTAL HONORARIOS',            def: false, num: true,   acc: r => fmt.cop(r.m3.totalHon) },
+  { id: 'gmf',             col: 'AK', m: 'M3', label: 'GMF 4×1000',                  def: false, num: true,   acc: r => fmt.cop(r.m3.gmf) },
+  { id: 'estampilla',      col: 'AL', m: 'M3', label: 'Estampilla Justicia 2%',      def: false, num: true,   acc: r => fmt.cop(r.m3.estampilla) },
+  { id: 'valorEjec',       col: 'AM', m: 'M3', label: 'Valor Ejecutado Contrato',    def: true,  num: true,   acc: r => fmt.cop(r.m3.valorEjec) },
+  { id: 'proveedor',       col: 'AN', m: 'M3', label: 'Proveedor Aprobado',          def: false, trunc: 200,  acc: r => esc(r.m3.proveedor || '—') },
+  { id: 'nit',             col: 'AO', m: 'M3', label: 'NIT',                         def: false, mono: true,  acc: r => esc(r.m3.nit || '—') },
+  { id: 'factura',         col: 'AP', m: 'M3', label: 'N° de Factura',               def: false, mono: true,  acc: r => esc(r.m3.factura || '—') },
+  { id: 'compEgreso',      col: 'AQ', m: 'M3', label: 'Comprobante Egreso',          def: false, mono: true,  acc: r => esc(r.m3.compEgreso || '—') },
+  // === Contratista (AR) ===
+  { id: 'pres462',         col: 'AR', m: 'CONT', label: 'Presentación 462',          def: false, mono: true,  acc: r => esc(r.contratista?.pres462 || '—') },
+  // === Tercer momento — Financiero (AS, AT) ===
+  { id: 'reporteNov',      col: 'AS', m: 'M3', label: 'Reporte de Novedades',        def: false, trunc: 180,  acc: r => esc(r.m3.reporteNov || '—') },
+  { id: 'estadoReq',       col: 'AT', m: 'M3', label: 'Estado del requerimiento',    def: false,              acc: r => esc(r.m3.estadoReq || '—') },
+  // === Segundo momento — Logístico (AU, AV evidencias) ===
+  { id: 'evSpc',           col: 'AU', m: 'M2', label: 'Estado Evidencia SPC',        def: false,              acc: r => esc(r.m2.evSpc || '—') },
+  { id: 'evOper',          col: 'AV', m: 'M2', label: 'Estado Evidencia Operador',   def: false,              acc: r => esc(r.m2.evOper || '—') },
+  // === Tercer momento — Financiero (AW-AZ) ===
+  { id: 'conciliacion',    col: 'AW', m: 'M3', label: 'Estado Conciliación',         def: false,              acc: r => esc(r.m3.conciliacion || '—') },
+  { id: 'estadoFactHon',   col: 'AX', m: 'M3', label: 'Estado Fact. Honorarios',     def: false,              acc: r => esc(r.m3.estadoFactHon || '—') },
+  { id: 'pagoHon',         col: 'AY', m: 'M3', label: '# Pago Honorarios',           def: false, mono: true,  acc: r => esc(r.m3.pagoHon || '—') },
+  { id: 'tipoRec',         col: 'AZ', m: 'M3', label: 'Tipo de Recurso',             def: false,              acc: r => esc(r.m3.tipoRec || '—') },
+  // === Revisión (BA-BN) ===
+  { id: 'opPdf',           col: 'BA', m: 'REV', label: 'OP PDF',                     def: false,              acc: r => esc(r.revision?.opPdf || '—') },
+  { id: 'correoOp',        col: 'BB', m: 'REV', label: 'Correo OP',                  def: false,              acc: r => esc(r.revision?.correoOp || '—') },
+  { id: 'cotiz1',          col: 'BC', m: 'REV', label: 'Cotiz 1',                    def: false,              acc: r => esc(r.revision?.cotiz1 || '—') },
+  { id: 'cotiz2',          col: 'BD', m: 'REV', label: 'Cotiz 2',                    def: false,              acc: r => esc(r.revision?.cotiz2 || '—') },
+  { id: 'cotiz3',          col: 'BE', m: 'REV', label: 'Cotiz 3',                    def: false,              acc: r => esc(r.revision?.cotiz3 || '—') },
+  { id: 'gestSolCotiz',    col: 'BF', m: 'REV', label: 'Gestión Solicitud Cotiz.',   def: false,              acc: r => esc(r.revision?.gestSolCotiz || '—') },
+  { id: 'justifSeleccProv',col: 'BG', m: 'REV', label: 'Justificación Selecc. Prov.',def: false, trunc: 180,  acc: r => esc(r.revision?.justifSeleccProv || '—') },
+  { id: 'correoVerifCotiz',col: 'BH', m: 'REV', label: 'Correo Verif. Cotiz.',       def: false,              acc: r => esc(r.revision?.correoVerifCotiz || '—') },
+  { id: 'soporteRespProv', col: 'BI', m: 'REV', label: 'Soporte Resp. Proveedores',  def: false,              acc: r => esc(r.revision?.soporteRespProv || '—') },
+  { id: 'informePlaza',    col: 'BJ', m: 'REV', label: 'Informe Plaza',              def: false,              acc: r => esc(r.revision?.informePlaza || '—') },
+  { id: 'listaChequeo',    col: 'BK', m: 'REV', label: 'Lista de Chequeo',           def: false,              acc: r => esc(r.revision?.listaChequeo || '—') },
+  { id: 'correoVerifInf',  col: 'BL', m: 'REV', label: 'Correo Verif. Informe',      def: false,              acc: r => esc(r.revision?.correoVerifInf || '—') },
+  { id: 'obsRev',          col: 'BM', m: 'REV', label: 'Observaciones Revisión',     def: false, trunc: 180,  acc: r => esc(r.revision?.obsRev || '—') },
+  { id: 'estadoRev',       col: 'BN', m: 'REV', label: 'Estado Revisión',            def: false,              acc: r => esc(r.revision?.estadoRev || '—') }
+];
+
+/* ============================================================
+   ESTADO GLOBAL
+   ============================================================ */
+
+const state = {
+  role: null,
+  view: 'dashboard',
+  filters: { search: '', subsec: '', estado: '', proyecto: '' },
+  editingReq: null,
+  activeTab: 'm1',
+  tarifarioCategoria: 1,
+  columnasVisibles: null, // se inicializa después de la declaración
+  columnsDrawerOpen: false,
+  columnsDrawerFilter: ''
+};
+state.columnasVisibles = COLUMNAS_DETALLE.filter(c => c.def).map(c => c.id);
+
+const ROLE_INFO = {
+  logistico:   { name: 'Daniel M.',    initials: 'DM', label: 'Logístico',    canEdit: ['m1', 'm2'] },
+  financiero:  { name: 'Catalina R.',  initials: 'CR', label: 'Financiero',   canEdit: ['m3'] },
+  contratista: { name: 'Hugo S.',      initials: 'HS', label: 'Contratista',  canEdit: ['contratista'] },
+  revision:    { name: 'Carlos H.',    initials: 'CH', label: 'Revisión',     canEdit: ['revision'] },
+  admin:       { name: 'Admin',        initials: 'AD', label: 'Admin',        canEdit: ['m1', 'm2', 'm3', 'contratista', 'revision'] }
+};
+
+/* ============================================================
+   UTILIDADES
+   ============================================================ */
+
+const fmt = {
+  cop: n => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n || 0),
+  copShort: n => {
+    if (!n) return '$0';
+    if (n >= 1e9) return '$' + (n / 1e9).toFixed(1) + ' MM';
+    if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + ' M';
+    if (n >= 1e3) return '$' + (n / 1e3).toFixed(0) + ' K';
+    return '$' + n.toFixed(0);
+  },
+  num: n => new Intl.NumberFormat('es-CO').format(n || 0),
+  pct: n => (n * 100).toFixed(1) + '%',
+  fecha: s => {
+    if (!s) return '—';
+    const d = new Date(s);
+    return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+};
+
+// Sanitiza texto para insertarlo en HTML
+function esc(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function estadoClase(estado) {
+  const map = {
+    'Ejecutado': 'ejecutado',
+    'En cotización': 'cotizacion',
+    'En subsanación': 'subsanacion',
+    'A ejecución': 'ejecucion',
+    'Cancelado': 'cancelado',
+    'Suspendido': 'suspendido',
+    'Sin recibir': 'suspendido'
+  };
+  return map[estado] || 'suspendido';
+}
+
+function showToast(msg, kind = 'success') {
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.toggle('success', kind === 'success');
+  t.classList.add('active');
+  setTimeout(() => t.classList.remove('active'), 2400);
+}
+
+/* ============================================================
+   CÁLCULOS FINANCIEROS (compartible con backend)
+   ============================================================ */
+
+function recalcular(precio, cantidad, tarifaImp) {
+  const subtotal = (precio || 0) * (cantidad || 0);
+  const valorImp = subtotal * (tarifaImp || 0);
+  const totalEjec = subtotal + valorImp;
+  const honorarios = totalEjec * 0.095;
+  const ivaHon = honorarios * 0.19;
+  const totalHon = honorarios + ivaHon;
+  const gmf = (totalEjec / 1000) * 4;
+  const estampilla = totalEjec * 0.02;
+  const valorEjec = totalEjec + totalHon;
+  return {
+    subtotal: Math.round(subtotal),
+    valorImp: Math.round(valorImp),
+    totalEjec: Math.round(totalEjec),
+    honorarios: Math.round(honorarios),
+    ivaHon: Math.round(ivaHon),
+    totalHon: Math.round(totalHon),
+    gmf: Math.round(gmf),
+    estampilla: Math.round(estampilla),
+    valorEjec: Math.round(valorEjec)
+  };
+}
+
+/* ============================================================
+   LOGIN
+   ============================================================ */
+
+(function initLogin() {
+  const roleButtons = document.querySelectorAll('.role-option');
+  const btn = document.getElementById('btnLogin');
+
+  roleButtons.forEach(b => {
+    b.addEventListener('click', () => {
+      roleButtons.forEach(x => x.classList.remove('selected'));
+      b.classList.add('selected');
+      state.role = b.dataset.role;
+      btn.disabled = false;
+    });
+  });
+
+  btn.addEventListener('click', () => {
+    if (!state.role) return;
+    document.getElementById('loginShell').style.display = 'none';
+    document.getElementById('app').classList.add('active');
+    applyRole();
+    render();
+  });
+})();
+
+function applyRole() {
+  const info = ROLE_INFO[state.role];
+  document.getElementById('userAvatar').textContent = info.initials;
+  document.getElementById('userName').textContent = info.name;
+  document.getElementById('userRoleBadge').textContent = info.label;
+  document.getElementById('navAuditoria').style.display = state.role === 'admin' ? '' : 'none';
+}
+
+document.getElementById('userChip').addEventListener('click', () => {
+  if (!confirm('¿Cerrar sesión y volver a la pantalla de selección de rol?')) return;
+  state.role = null;
+  document.getElementById('app').classList.remove('active');
+  document.getElementById('loginShell').style.display = '';
+  document.querySelectorAll('.role-option').forEach(x => x.classList.remove('selected'));
+  document.getElementById('btnLogin').disabled = true;
+});
+
+/* ============================================================
+   NAVEGACIÓN
+   ============================================================ */
+
+document.querySelectorAll('.nav-item[data-view]').forEach(item => {
+  item.addEventListener('click', () => {
+    if (item.classList.contains('disabled')) return;
+    document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
+    item.classList.add('active');
+    state.view = item.dataset.view;
+    render();
+  });
+});
+
+const TITLES = {
+  dashboard: 'Resumen',
+  requerimientos: 'Requerimientos',
+  tarifario: 'Tarifario del Distrito',
+  reportes: 'Reportes',
+  auditoria: 'Auditoría'
+};
+
+/* ============================================================
+   RENDER PRINCIPAL
+   ============================================================ */
+
+function render() {
+  document.getElementById('topbarTitle').textContent = TITLES[state.view];
+  const content = document.getElementById('content');
+  switch (state.view) {
+    case 'dashboard':       content.innerHTML = renderDashboard(); afterRenderDashboard(); break;
+    case 'requerimientos':  content.innerHTML = renderRequerimientos(); attachReqTable(); break;
+    case 'tarifario':       content.innerHTML = renderTarifario(); attachTarifario(); break;
+    case 'reportes':        content.innerHTML = renderReportes(); afterRenderDashboard(); break;
+    case 'auditoria':       content.innerHTML = renderAuditoria(); break;
+  }
+}
+
+/* ============================================================
+   VISTA: DASHBOARD
+   ============================================================ */
+
+function renderDashboard() {
+  const total = REQUERIMIENTOS.length;
+  const ejecutados = REQUERIMIENTOS.filter(r => r.estadoTramite === 'Ejecutado').length;
+  const enCurso = REQUERIMIENTOS.filter(r => ['A ejecución', 'En cotización'].includes(r.estadoTramite)).length;
+  const cancelados = REQUERIMIENTOS.filter(r => r.estadoTramite === 'Cancelado').length;
+  const presupuestoTotal = REQUERIMIENTOS.reduce((s, r) => s + (r.m3.valorEjec || 0), 0);
+  const ejecutado = REQUERIMIENTOS.filter(r => r.estadoTramite === 'Ejecutado').reduce((s, r) => s + (r.m3.valorEjec || 0), 0);
+  const pctEjec = ejecutado / presupuestoTotal;
+
+  // Por subsecretaría
+  const porSubsec = {};
+  REQUERIMIENTOS.forEach(r => {
+    porSubsec[r.m1.subsec] = (porSubsec[r.m1.subsec] || 0) + (r.m3.valorEjec || 0);
+  });
+  const subsecMax = Math.max(...Object.values(porSubsec));
+
+  return `
+    <div class="page-header">
+      <h1>Resumen ejecutivo</h1>
+      <p>Estado consolidado de la operación logística — Mayo 2026 · Vigencia presupuestal ${esc(new Date().getFullYear())}</p>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Total requerimientos</div>
+        <div class="kpi-value">${total}<span class="kpi-value-suffix">activos</span></div>
+        <div class="kpi-trend up">
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8l3-3 3 3"/></svg>
+          12% vs. mes anterior
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Presupuesto ejecutado</div>
+        <div class="kpi-value">${fmt.copShort(ejecutado)}</div>
+        <div class="kpi-progress"><div class="kpi-progress-fill" style="width: ${(pctEjec * 100).toFixed(0)}%"></div></div>
+        <div class="kpi-trend flat" style="margin-top: 6px;">${fmt.pct(pctEjec)} del total comprometido</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">En curso</div>
+        <div class="kpi-value">${enCurso}<span class="kpi-value-suffix">/ ${total}</span></div>
+        <div class="kpi-trend flat">A ejecución + en cotización</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Ejecutados completados</div>
+        <div class="kpi-value">${ejecutados}<span class="kpi-value-suffix">/ ${total}</span></div>
+        <div class="kpi-trend up">${cancelados} cancelados</div>
+      </div>
+    </div>
+
+    <div class="dash-grid">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Ejecución por subsecretaría</div>
+          <div class="panel-action">Ver detalle →</div>
+        </div>
+        <div class="bar-chart">
+          ${Object.entries(porSubsec).sort((a,b)=>b[1]-a[1]).map(([sub, val], i) => `
+            <div class="bar-row">
+              <div class="bar-label">${esc(sub)}</div>
+              <div class="bar-track">
+                <div class="bar-fill ${i === 1 ? 'gold' : ''}" style="width: ${(val/subsecMax*100).toFixed(0)}%"></div>
+              </div>
+              <div class="bar-value">${fmt.copShort(val)}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Estados de trámite</div>
+        </div>
+        <div class="donut-wrap">
+          ${renderDonut()}
+          <div class="donut-center">
+            <div>
+              <div class="donut-center-value">${total}</div>
+              <div class="donut-center-label">Total</div>
+            </div>
+          </div>
+        </div>
+        <div class="legend">
+          ${[
+            { label: 'Ejecutado', color: '#2d6a4f', n: REQUERIMIENTOS.filter(r=>r.estadoTramite==='Ejecutado').length },
+            { label: 'A ejecución', color: '#a8842d', n: REQUERIMIENTOS.filter(r=>r.estadoTramite==='A ejecución').length },
+            { label: 'En cotización', color: '#2c4870', n: REQUERIMIENTOS.filter(r=>r.estadoTramite==='En cotización').length },
+            { label: 'En subsanación', color: '#b07b15', n: REQUERIMIENTOS.filter(r=>r.estadoTramite==='En subsanación').length },
+            { label: 'Cancelado', color: '#9a2a2a', n: REQUERIMIENTOS.filter(r=>r.estadoTramite==='Cancelado').length }
+          ].filter(x => x.n > 0).map(x => `
+            <div class="legend-item">
+              <div class="legend-dot" style="background: ${x.color}"></div>
+              <div>${esc(x.label)}</div>
+              <div class="legend-count">${x.n}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Próximas entregas — esta semana</div>
+        <div class="panel-action">Ver todas →</div>
+      </div>
+      <table class="data-table" style="margin: -16px;">
+        <thead>
+          <tr>
+            <th>OP</th>
+            <th>Evento</th>
+            <th>Lugar</th>
+            <th>Fecha</th>
+            <th>Estado</th>
+            <th style="text-align:right;">Valor</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${REQUERIMIENTOS.slice(0, 5).map(r => `
+            <tr onclick="openModal('${r.id}')">
+              <td class="cell-mono">${esc(r.op)}</td>
+              <td class="cell-truncate" title="${esc(r.m2.evento)}">${esc(r.m2.evento)}</td>
+              <td class="cell-truncate" style="max-width: 180px;">${esc(r.m2.lugar)}</td>
+              <td>${fmt.fecha(r.m2.fechaEntrega)}</td>
+              <td><span class="status-pill ${estadoClase(r.estadoTramite)}">${esc(r.estadoTramite)}</span></td>
+              <td class="cell-number">${fmt.cop(r.m3.valorEjec)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderDonut() {
+  const total = REQUERIMIENTOS.length;
+  const counts = {
+    'Ejecutado': REQUERIMIENTOS.filter(r=>r.estadoTramite==='Ejecutado').length,
+    'A ejecución': REQUERIMIENTOS.filter(r=>r.estadoTramite==='A ejecución').length,
+    'En cotización': REQUERIMIENTOS.filter(r=>r.estadoTramite==='En cotización').length,
+    'En subsanación': REQUERIMIENTOS.filter(r=>r.estadoTramite==='En subsanación').length,
+    'Cancelado': REQUERIMIENTOS.filter(r=>r.estadoTramite==='Cancelado').length
+  };
+  const colors = {
+    'Ejecutado': '#2d6a4f',
+    'A ejecución': '#a8842d',
+    'En cotización': '#2c4870',
+    'En subsanación': '#b07b15',
+    'Cancelado': '#9a2a2a'
+  };
+  const circ = 2 * Math.PI * 70;
+  let offset = 0;
+  const segments = Object.entries(counts).filter(([, n]) => n > 0).map(([label, n]) => {
+    const len = (n / total) * circ;
+    const seg = `<circle r="70" cx="90" cy="90" fill="none" stroke="${colors[label]}" stroke-width="18"
+                  stroke-dasharray="${len} ${circ}" stroke-dashoffset="${-offset}" />`;
+    offset += len;
+    return seg;
+  }).join('');
+  return `<svg class="donut-svg" width="180" height="180" viewBox="0 0 180 180">
+            <circle class="donut-bg" r="70" cx="90" cy="90"/>
+            ${segments}
+          </svg>`;
+}
+
+function afterRenderDashboard() {
+  // Animar barras
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.bar-fill').forEach(b => {
+      const w = b.style.width;
+      b.style.width = '0';
+      requestAnimationFrame(() => { b.style.width = w; });
+    });
+  });
+}
+
+/* ============================================================
+   VISTA: REQUERIMIENTOS
+   ============================================================ */
+
+function getFilteredReqs() {
+  return REQUERIMIENTOS.filter(r => {
+    if (state.filters.search) {
+      const q = state.filters.search.toLowerCase();
+      if (!(r.op + ' ' + r.m2.evento + ' ' + r.m2.lugar).toLowerCase().includes(q)) return false;
+    }
+    if (state.filters.subsec && r.m1.subsec !== state.filters.subsec) return false;
+    if (state.filters.estado && r.estadoTramite !== state.filters.estado) return false;
+    if (state.filters.proyecto && r.m2.proyecto !== state.filters.proyecto) return false;
+    return true;
+  });
+}
+
+function renderRequerimientos() {
+  const reqs = getFilteredReqs();
+  const canCreate = ['logistico', 'admin'].includes(state.role);
+
+  return `
+    <div class="page-header">
+      <h1>Requerimientos logísticos</h1>
+      <p>Registro detallado de cada operación logística desde su solicitud hasta la conciliación final. Click en cualquier fila para abrir el detalle por momentos.</p>
+    </div>
+
+    <div class="table-toolbar">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" placeholder="Buscar por OP, evento, lugar..." id="searchInput" value="${esc(state.filters.search)}">
+      </div>
+
+      <select class="filter-select" id="filterSubsec">
+        <option value="">Todas las subsecretarías</option>
+        ${CATALOGOS.subsecretarias.map(s => `<option value="${esc(s)}" ${state.filters.subsec === s ? 'selected' : ''}>${esc(s)}</option>`).join('')}
+      </select>
+
+      <select class="filter-select" id="filterEstado">
+        <option value="">Todos los estados</option>
+        ${CATALOGOS.estadosTramite.map(s => `<option value="${esc(s)}" ${state.filters.estado === s ? 'selected' : ''}>${esc(s)}</option>`).join('')}
+      </select>
+
+      <select class="filter-select" id="filterProyecto">
+        <option value="">Todos los proyectos</option>
+        ${PROYECTOS.map(p => `<option value="${esc(p.codigo)}" ${state.filters.proyecto === p.codigo ? 'selected' : ''}>${esc(p.codigo)} — ${esc(p.nombre.substring(0, 30))}${p.nombre.length > 30 ? '…' : ''}</option>`).join('')}
+      </select>
+
+      <button class="btn-secondary" id="btnColumnas" title="Configurar columnas visibles">
+        <svg class="btn-icon" viewBox="0 0 24 24"><path d="M3 5h18M3 12h18M3 19h18"/></svg>
+        Columnas <span class="cols-count" id="colsCount">${state.columnasVisibles.length}/${COLUMNAS_DETALLE.length}</span>
+      </button>
+
+      <button class="btn-secondary" id="btnExport">
+        <svg class="btn-icon" viewBox="0 0 24 24"><path d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16"/></svg>
+        Exportar Excel
+      </button>
+
+      ${canCreate ? `<button class="btn-accent" id="btnNuevo">
+        <svg class="btn-icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        Nuevo requerimiento
+      </button>` : ''}
+    </div>
+
+    ${renderTablaReqs(reqs)}
+  `;
+}
+
+// Genera el bloque <div class="table-wrap"> con columnas dinámicas
+function renderTablaReqs(reqs) {
+  const cols = state.columnasVisibles
+    .map(id => COLUMNAS_DETALLE.find(c => c.id === id))
+    .filter(Boolean);
+  const totalCols = cols.length || 1;
+  const isWide = cols.length > 9;
+
+  const renderCell = (c, r) => {
+    let val;
+    try { val = c.acc(r); } catch (e) { val = '—'; }
+    let cls = '';
+    if (c.mono) cls += ' cell-mono';
+    if (c.num) cls += ' cell-number';
+    if (c.trunc) cls += ' cell-truncate';
+    let inner = val;
+    if (c.pill) inner = `<span class="status-pill ${estadoClase(val)}">${esc(val)}</span>`;
+    const style = c.trunc ? ` style="max-width: ${c.trunc}px;"` : '';
+    const title = c.trunc ? ` title="${typeof val === 'string' ? val.replace(/<[^>]+>/g, '') : ''}"` : '';
+    return `<td class="${cls.trim()}"${style}${title}>${inner}</td>`;
+  };
+
+  return `
+    <div class="table-wrap ${isWide ? 'table-wrap-wide' : ''}">
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              ${cols.map(c => `<th${c.num ? ' style="text-align:right;"' : ''} title="Columna ${c.col} del Excel">${esc(c.label)}<span class="col-letter">${c.col}</span></th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${reqs.length === 0 ? `
+              <tr><td colspan="${totalCols}" style="text-align: center; padding: 48px; color: var(--color-text-tertiary);">
+                No hay requerimientos que coincidan con los filtros.
+              </td></tr>
+            ` : reqs.map(r => `
+              <tr onclick="openModal('${esc(r.id)}')">
+                ${cols.map(c => renderCell(c, r)).join('')}
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="table-footer">
+        <div>Mostrando <strong>${reqs.length}</strong> de <strong>${REQUERIMIENTOS.length}</strong> requerimientos · <strong>${cols.length}</strong> de ${COLUMNAS_DETALLE.length} columnas visibles</div>
+        <div class="pagination">
+          <button class="page-btn">‹</button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">›</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function attachReqTable() {
+  document.getElementById('searchInput').addEventListener('input', e => {
+    state.filters.search = e.target.value;
+    refreshReqTableOnly();
+  });
+  document.getElementById('filterSubsec').addEventListener('change', e => {
+    state.filters.subsec = e.target.value;
+    refreshReqTableOnly();
+  });
+  document.getElementById('filterEstado').addEventListener('change', e => {
+    state.filters.estado = e.target.value;
+    refreshReqTableOnly();
+  });
+  document.getElementById('filterProyecto').addEventListener('change', e => {
+    state.filters.proyecto = e.target.value;
+    refreshReqTableOnly();
+  });
+  const btnNuevo = document.getElementById('btnNuevo');
+  if (btnNuevo) btnNuevo.addEventListener('click', () => {
+    openModal(null);
+  });
+  document.getElementById('btnExport').addEventListener('click', () => {
+    showToast('Exportación generada (demo)', 'success');
+  });
+  document.getElementById('btnColumnas').addEventListener('click', openColumnsDrawer);
+}
+
+// Re-render manteniendo el foco del input (no recreamos toda la página)
+function refreshReqTableOnly() {
+  const reqs = getFilteredReqs();
+  const wrap = document.querySelector('.table-wrap');
+  if (!wrap) return;
+  wrap.outerHTML = renderTablaReqs(reqs);
+  // Actualizar contador en el botón de columnas
+  const counter = document.getElementById('colsCount');
+  if (counter) counter.textContent = `${state.columnasVisibles.length}/${COLUMNAS_DETALLE.length}`;
+}
+
+/* ============================================================
+   MODAL EDICIÓN
+   ============================================================ */
+
+function openModal(reqId) {
+  const isNew = !reqId;
+  const r = isNew ? newEmptyReq() : REQUERIMIENTOS.find(x => x.id === reqId);
+  if (!r) return;
+  state.editingReq = r;
+  state.activeTab = 'm1';
+
+  document.getElementById('modalEyebrow').textContent = isNew ? 'Nuevo requerimiento' : `Requerimiento ${r.op}`;
+  document.getElementById('modalTitle').textContent = isNew ? 'Crear nuevo requerimiento' : r.m2.evento;
+  document.getElementById('modalOp').textContent = isNew ? '— (se asignará al guardar)' : r.op;
+  document.getElementById('modalCreated').textContent = isNew ? 'Ahora' : fmt.fecha(r.m1.fechaElab);
+  document.getElementById('modalUpdated').textContent = isNew ? '—' : 'hace 2 horas';
+
+  const modalEl = document.querySelector('#modal .modal');
+  if (modalEl) modalEl.classList.toggle('is-new', isNew);
+
+  renderModalTabs();
+  renderModalContent();
+  document.getElementById('modal').classList.add('active');
+}
+
+function newEmptyReq() {
+  return {
+    id: 'new', op: '—', opSeq: REQUERIMIENTOS.length + 1,
+    m1: { subsec: '', enlace: '', fechaElab: new Date().toISOString().substring(0,10) },
+    m2: { evento: '', proyecto: '', comuna: '', mga: '', actDet: '', fechaEntrega: '', lugar: '', persona: '', contacto: '',
+          tarifario: '', desc: '', medida: '', cantidad: 0, obs: '', evSpc: 'PENDIENTE', evOper: 'PENDIENTE' },
+    m3: { precio: 0, subtotal: 0, tarifaImp: 0.19, valorImp: 0, totalEjec: 0, honorarios: 0, ivaHon: 0, totalHon: 0, gmf: 0, estampilla: 0, valorEjec: 0,
+          proveedor: '', nit: '', factura: '', estadoReq: 'A ejecución', conciliacion: 'PENDIENTE', tipoRec: 'ORD' },
+    estadoTramite: 'En cotización'
+  };
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('active');
+  state.editingReq = null;
+}
+
+document.getElementById('modalClose').addEventListener('click', closeModal);
+document.getElementById('modalCancel').addEventListener('click', closeModal);
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target.id === 'modal') closeModal();
+});
+document.getElementById('modalSave').addEventListener('click', () => {
+  showToast('Guardado · transacción confirmada', 'success');
+  setTimeout(closeModal, 400);
+});
+
+function canRoleEditTab(tabId) {
+  const allowed = ROLE_INFO[state.role].canEdit;
+  return allowed.includes(tabId);
+}
+
+function renderModalTabs() {
+  const tabs = [
+    { id: 'm1', label: 'Momento 1', role: 'Logístico' },
+    { id: 'm2', label: 'Momento 2', role: 'Logístico' },
+    { id: 'm3', label: 'Momento 3', role: 'Financiero' },
+    { id: 'contratista', label: 'Contratista', role: 'Contratista' },
+    { id: 'revision', label: 'Revisión', role: 'Revisión' }
+  ];
+  document.getElementById('modalTabs').innerHTML = tabs.map(t => {
+    const canEdit = canRoleEditTab(t.id);
+    return `<button class="tab-btn ${state.activeTab === t.id ? 'active' : ''}" data-tab="${t.id}">
+      ${esc(t.label)}
+      <span class="tab-role-badge">${esc(t.role)}</span>
+      ${!canEdit ? '<svg class="tab-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="1"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>' : ''}
+    </button>`;
+  }).join('');
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      state.activeTab = b.dataset.tab;
+      renderModalTabs();
+      renderModalContent();
+    });
+  });
+}
+
+function renderModalContent() {
+  const r = state.editingReq;
+  const isNew = r.id === 'new';
+  const tabsToRender = isNew ? ['m1', 'm2', 'm3', 'contratista', 'revision'] : [state.activeTab];
+
+  let html = '';
+
+  if (isNew) {
+    html += `<div class="form-banner" style="background: var(--color-gold-soft); border-color: var(--color-gold); color: var(--color-gold);">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+      <div><strong>Creación de requerimiento — vista completa.</strong> Las 5 secciones (66 columnas) están disponibles. Diligencia los campos que ya conoces; los que correspondan a otros momentos pueden quedar vacíos y los completarán los roles responsables (financiero, contratista, revisión) en su fase del proceso.</div>
+    </div>`;
+  }
+
+  for (const t of tabsToRender) {
+    const canEdit = isNew ? true : canRoleEditTab(t);
+    const dis = canEdit ? '' : 'disabled';
+
+    if (isNew) {
+      const numero = { m1: 'M1', m2: 'M2', m3: 'M3', contratista: 'CONT', revision: 'REV' }[t];
+      html += `<div class="momento-divider">
+        <span class="momento-divider-num">${esc(numero)}</span>
+        <span class="momento-divider-label">${esc(MOMENTOS_LABEL_MODAL[t])}</span>
+      </div>`;
+    }
+
+    if (!isNew && !canEdit) {
+      html += `<div class="form-banner locked">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="1"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
+        <div>Tu rol <strong>${esc(ROLE_INFO[state.role].label)}</strong> no puede editar esta sección. Solo lectura.</div>
+      </div>`;
+    }
+
+  if (t === 'm1') {
+    html += `
+      <div class="form-banner">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+        <div>Datos básicos del primer momento, asignados por el equipo logístico al crear el requerimiento.</div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Subsecretaría <span class="required">*</span></label>
+          <select class="form-select" ${dis}>
+            <option value="">Seleccionar...</option>
+            ${CATALOGOS.subsecretarias.map(s => `<option ${s === r.m1.subsec ? 'selected' : ''}>${esc(s)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Enlace logístico responsable <span class="required">*</span></label>
+          <select class="form-select" ${dis}>
+            <option value="">Seleccionar...</option>
+            ${CATALOGOS.enlaces.map(e => `<option ${e === r.m1.enlace ? 'selected' : ''}>${esc(e)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha de elaboración</label>
+          <input type="date" class="form-input" value="${esc(r.m1.fechaElab)}" ${dis}>
+        </div>
+        <div class="form-group">
+          <label class="form-label">OP (asignado automáticamente)</label>
+          <input type="text" class="form-input mono" value="${esc(r.op)}" disabled>
+        </div>
+      </div>
+    `;
+  }
+
+  if (t === 'm2') {
+    const tarif = TARIFARIO.find(x => x.id === r.m2.tarifario);
+    html += `
+      <div class="form-banner">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+        <div>Datos del evento y requerimiento del tarifario. El sistema selecciona automáticamente el código y precio según la cantidad ingresada.</div>
+      </div>
+
+      <div class="section-divider">
+        <div class="section-divider-title">Datos del evento</div>
+        <div class="section-divider-sub">Información logística general</div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group span-2">
+          <label class="form-label">Nombre del evento <span class="required">*</span></label>
+          <input type="text" class="form-input" value="${esc(r.m2.evento)}" ${dis}>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estado del trámite</label>
+          <select class="form-select" ${dis}>
+            ${CATALOGOS.estadosTramite.map(e => `<option ${e === r.estadoTramite ? 'selected' : ''}>${esc(e)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group span-2">
+          <label class="form-label">Instancia / Beneficiario <span class="hint">(Col J)</span></label>
+          <input type="text" class="form-input" value="${esc(r.m2.instancia || '')}" placeholder="Ej: Mesa Comunitaria, JAL, Organización beneficiaria..." ${dis}>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Código proyecto <span class="required">*</span></label>
+          <select class="form-select" ${dis} id="selProyecto">
+            <option value="">Seleccionar...</option>
+            ${PROYECTOS.map(p => `<option value="${esc(p.codigo)}" ${p.codigo === r.m2.proyecto ? 'selected' : ''}>${esc(p.codigo)} — ${esc(p.nombre)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group span-2">
+          <label class="form-label">Nombre proyecto <span class="hint">(auto)</span></label>
+          <input type="text" class="form-input" value="${esc(PROYECTOS.find(p => p.codigo === r.m2.proyecto)?.nombre || '')}" disabled>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Comuna</label>
+          <select class="form-select" ${dis}>
+            ${CATALOGOS.comunas.map(c => `<option ${c === r.m2.comuna ? 'selected' : ''}>${esc(c)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group span-2">
+          <label class="form-label">Actividad MGA</label>
+          <input type="text" class="form-input" value="${esc(r.m2.mga)}" ${dis}>
+        </div>
+        <div class="form-group span-2">
+          <label class="form-label">Actividad detallada MGA <span class="hint">(auto del catálogo)</span></label>
+          <input type="text" class="form-input" value="${esc(r.m2.actDet)}" disabled>
+        </div>
+      </div>
+
+      <div class="section-divider">
+        <div class="section-divider-title">Fecha de remisión al operador</div>
+        <div class="section-divider-sub">Columnas E, F, G del Excel — se diligencian por separado para mantener fidelidad con la matriz original</div>
+      </div>
+
+      <div class="form-grid cols-3">
+        <div class="form-group">
+          <label class="form-label">Día <span class="hint">(Col E)</span></label>
+          <input type="number" class="form-input mono" min="1" max="31" value="${esc(r.m2.remDia || '')}" placeholder="dd" ${dis}>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mes <span class="hint">(Col F)</span></label>
+          <input type="number" class="form-input mono" min="1" max="12" value="${esc(r.m2.remMes || '')}" placeholder="mm" ${dis}>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Año <span class="hint">(Col G)</span></label>
+          <input type="number" class="form-input mono" min="2024" max="2030" value="${esc(r.m2.remAno || '')}" placeholder="aaaa" ${dis}>
+        </div>
+      </div>
+
+      <div class="section-divider">
+        <div class="section-divider-title">Logística de entrega</div>
+        <div class="section-divider-sub">Fechas, lugar y contactos</div>
+      </div>
+
+      <div class="form-grid cols-3">
+        <div class="form-group">
+          <label class="form-label">Fecha entrega <span class="required">*</span></label>
+          <input type="date" class="form-input" value="${esc(r.m2.fechaEntrega)}" ${dis}>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hora entrega</label>
+          <input type="time" class="form-input" value="${esc(r.m2.horaEntrega || '08:00')}" ${dis}>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha montaje</label>
+          <input type="date" class="form-input" value="${esc(r.m2.fechaMontaje || r.m2.fechaEntrega)}" ${dis}>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha desmontaje</label>
+          <input type="date" class="form-input" value="${esc(r.m2.fechaDesmontaje || r.m2.fechaEntrega)}" ${dis}>
+        </div>
+        <div class="form-group span-3">
+          <label class="form-label">Lugar del evento (dirección)</label>
+          <input type="text" class="form-input" value="${esc(r.m2.lugar)}" ${dis}>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Persona que recibe</label>
+          <input type="text" class="form-input" value="${esc(r.m2.persona)}" ${dis}>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contacto</label>
+          <input type="text" class="form-input mono" value="${esc(r.m2.contacto)}" ${dis}>
+        </div>
+      </div>
+
+      <div class="section-divider">
+        <div class="section-divider-title">Conexión con Tarifario del Distrito</div>
+        <div class="section-divider-sub">Búsqueda automática por descripción · selección de código por rango de cantidad</div>
+      </div>
+
+      <div class="form-grid cols-3">
+        <div class="form-group span-2 tarifario-search">
+          <label class="form-label">Descripción del requerimiento <span class="hint">(busca en el tarifario)</span></label>
+          <input type="text" class="form-input" id="tarifSearch" value="${esc(r.m2.desc)}" placeholder="Empieza a escribir, ej: 'botella de agua'..." ${dis}>
+          <div class="tarifario-results" id="tarifResults"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cantidad <span class="required">*</span></label>
+          <input type="number" class="form-input mono" id="tarifCantidad" value="${esc(r.m2.cantidad)}" ${dis}>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Código tarifario <span class="hint">(auto)</span></label>
+          <input type="text" class="form-input mono" id="tarifCodigo" value="${esc(r.m2.tarifario)}" disabled>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Unidad de medida <span class="hint">(auto)</span></label>
+          <input type="text" class="form-input" id="tarifMedida" value="${esc(r.m2.medida)}" disabled>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Precio unitario <span class="hint">(auto)</span></label>
+          <input type="text" class="form-input computed" id="tarifPrecio" value="${tarif ? fmt.cop(tarif.precio) : ''}" disabled>
+        </div>
+      </div>
+
+      <div class="tarifario-info-box ${tarif ? 'active' : ''}" id="tarifInfo">
+        <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+        <div>
+          ${tarif ? `<strong>${esc(tarif.id)}</strong> · ${esc(tarif.desc)} — rango ${tarif.min}-${tarif.max} ${esc(tarif.medida)}s · precio antes de IVA: <strong>${fmt.cop(tarif.precio)}</strong>` : ''}
+        </div>
+        <a class="text-mono" style="font-size: 11px; color: var(--color-accent); cursor: pointer;">Ver detalle del ítem →</a>
+      </div>
+
+      <div class="form-grid" style="margin-top: 16px;">
+        <div class="form-group span-2">
+          <label class="form-label">Observaciones del requerimiento</label>
+          <textarea class="form-textarea" ${dis}>${esc(r.m2.obs)}</textarea>
+        </div>
+      </div>
+
+      <div class="section-divider">
+        <div class="section-divider-title">Estado de evidencias</div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Estado evidencia SPC</label>
+          <select class="form-select" ${dis}>
+            ${CATALOGOS.estadosEvidencia.map(e => `<option ${e === r.m2.evSpc ? 'selected' : ''}>${esc(e)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estado evidencia Operador</label>
+          <select class="form-select" ${dis}>
+            ${CATALOGOS.estadosEvidencia.map(e => `<option ${e === r.m2.evOper ? 'selected' : ''}>${esc(e)}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+    `;
+  }
+
+  if (t === 'm3') {
+    html += `
+      <div class="form-banner">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+        <div>Cálculos financieros derivados del momento 2. Los valores se recalculan automáticamente en el servidor antes de persistir.</div>
+      </div>
+
+      <div class="section-divider">
+        <div class="section-divider-title">Identificador financiero</div>
+        <div class="section-divider-sub">Columna P del Excel — asignado por el rol financiero</div>
+      </div>
+
+      <div class="form-grid cols-3">
+        <div class="form-group">
+          <label class="form-label">ID interno <span class="hint">(Col P)</span></label>
+          <input type="text" class="form-input mono" value="${esc(r.m3.idInterno || '')}" placeholder="Ej: P-2026-0001" ${dis}>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tipo de recurso <span class="hint">(Col AZ)</span></label>
+          <select class="form-select" ${dis}>
+            ${CATALOGOS.tiposRecurso.map(tr => `<option ${tr === r.m3.tipoRec ? 'selected' : ''}>${esc(tr)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estado del requerimiento <span class="hint">(Col AT)</span></label>
+          <select class="form-select" ${dis}>
+            ${CATALOGOS.estadosReq.map(e => `<option ${e === r.m3.estadoReq ? 'selected' : ''}>${esc(e)}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+
+      <div class="section-divider">
+        <div class="section-divider-title">Base del cálculo</div>
+        <div class="section-divider-sub">Datos provenientes del momento 2 (solo lectura aquí)</div>
+      </div>
+
+      <div class="form-grid cols-3">
+        <div class="form-group">
+          <label class="form-label">Cantidad</label>
+          <input type="number" class="form-input mono" value="${esc(r.m2.cantidad)}" disabled>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Precio compra/u</label>
+          <input type="text" class="form-input mono" value="${fmt.cop(r.m3.precio)}" disabled>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tarifa impuesto</label>
+          <select class="form-select" ${dis}>
+            ${CATALOGOS.tarifasImpuesto.map(t2 => `<option value="${t2}" ${t2 === r.m3.tarifaImp ? 'selected' : ''}>${(t2 * 100).toFixed(0)}%</option>`).join('')}
+          </select>
+        </div>
+      </div>
+
+      <div class="calc-panel">
+        <div class="calc-row"><div class="calc-label">Subtotal compra</div><div class="calc-value">${fmt.cop(r.m3.subtotal)}</div></div>
+        <div class="calc-row"><div class="calc-label">Valor impuesto (subtotal × tarifa)</div><div class="calc-value">${fmt.cop(r.m3.valorImp)}</div></div>
+        <div class="calc-row"><div class="calc-label">Total ejecutable con impuesto</div><div class="calc-value">${fmt.cop(r.m3.totalEjec)}</div></div>
+        <div class="calc-row"><div class="calc-label">% Honorarios (9,5%)</div><div class="calc-value">${fmt.cop(r.m3.honorarios)}</div></div>
+        <div class="calc-row"><div class="calc-label">IVA honorarios (19%)</div><div class="calc-value">${fmt.cop(r.m3.ivaHon)}</div></div>
+        <div class="calc-row"><div class="calc-label">Total honorarios</div><div class="calc-value">${fmt.cop(r.m3.totalHon)}</div></div>
+        <div class="calc-row"><div class="calc-label">GMF (4×1000)</div><div class="calc-value">${fmt.cop(r.m3.gmf)}</div></div>
+        <div class="calc-row"><div class="calc-label">Estampilla Justicia Familia (2%)</div><div class="calc-value">${fmt.cop(r.m3.estampilla)}</div></div>
+        <div class="calc-row total"><div class="calc-label">Valor ejecutado contrato</div><div class="calc-value">${fmt.cop(r.m3.valorEjec)}</div></div>
+      </div>
+
+      <div class="section-divider">
+        <div class="section-divider-title">Proveedor y facturación</div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Proveedor aprobado <span class="hint">(Col AN)</span></label>
+          <input type="text" class="form-input" value="${esc(r.m3.proveedor)}" ${dis}>
+        </div>
+        <div class="form-group">
+          <label class="form-label">NIT <span class="hint">(Col AO)</span></label>
+          <input type="text" class="form-input mono" value="${esc(r.m3.nit)}" ${dis}>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Número de factura <span class="hint">(Col AP)</span></label>
+          <input type="text" class="form-input mono" value="${esc(r.m3.factura)}" ${dis}>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Comprobante de egreso <span class="hint">(Col AQ)</span></label>
+          <input type="text" class="form-input mono" value="${esc(r.m3.compEgreso || '')}" ${dis}>
+        </div>
+      </div>
+
+      <div class="section-divider">
+        <div class="section-divider-title">Novedades y conciliación</div>
+        <div class="section-divider-sub">Reporte operativo + estados de conciliación y pago</div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group span-2">
+          <label class="form-label">Reporte de novedades <span class="hint">(Col AS)</span></label>
+          <textarea class="form-textarea" placeholder="Cualquier novedad ocurrida durante la ejecución..." ${dis}>${esc(r.m3.reporteNov || '')}</textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estado de conciliación <span class="hint">(Col AW)</span></label>
+          <select class="form-select" ${dis}>
+            ${CATALOGOS.estadosEvidencia.map(e => `<option ${e === r.m3.conciliacion ? 'selected' : ''}>${esc(e)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estado facturación honorarios <span class="hint">(Col AX)</span></label>
+          <select class="form-select" ${dis}>
+            ${CATALOGOS.estadosEvidencia.map(e => `<option ${e === r.m3.estadoFactHon ? 'selected' : ''}>${esc(e)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label"># Pago honorarios <span class="hint">(Col AY)</span></label>
+          <input type="text" class="form-input mono" value="${esc(r.m3.pagoHon || '')}" placeholder="N° de comprobante de pago" ${dis}>
+        </div>
+      </div>
+    `;
+  }
+
+  if (t === 'contratista') {
+    html += `
+      <div class="form-banner">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+        <div>Esta sección la diligencia exclusivamente el contratista — formato de presentación 462.</div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Presentación 462 (numérico)</label>
+          <input type="number" class="form-input mono" placeholder="—" ${dis}>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha de presentación</label>
+          <input type="date" class="form-input" ${dis}>
+        </div>
+      </div>
+    `;
+  }
+
+  if (t === 'revision') {
+    const docs = [
+      'OP PDF', 'Correo OP', 'Cotización 1', 'Cotización 2', 'Cotización 3',
+      'Gestión solicitud de cotización', 'Justificación selección proveedor',
+      'Correo verificación cotizaciones', 'Soporte respuesta proveedores',
+      'Informe Plaza', 'Lista de chequeo', 'Correo verificación informe'
+    ];
+    html += `
+      <div class="form-banner">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+        <div>Carga de soportes documentales. Los archivos se almacenan en Firebase Storage; aquí solo se referencia la URL.</div>
+      </div>
+      <div class="form-grid">
+        ${docs.map(d => `
+          <div class="form-group">
+            <label class="form-label">${esc(d)}</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" class="form-input mono" placeholder="URL del archivo..." style="flex: 1;" ${dis}>
+              <button class="btn-secondary" ${!canEdit ? 'disabled' : ''} style="padding: 9px 12px;">
+                <svg class="btn-icon" viewBox="0 0 24 24"><path d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16"/></svg>
+              </button>
+            </div>
+          </div>
+        `).join('')}
+        <div class="form-group span-2">
+          <label class="form-label">Observaciones de revisión</label>
+          <textarea class="form-textarea" ${dis}></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estado revisión</label>
+          <select class="form-select" ${dis}>
+            ${CATALOGOS.estadosEvidencia.map(e => `<option>${esc(e)}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+    `;
+  }
+
+  } // fin for tabsToRender
+
+  document.getElementById('modalBody').innerHTML = html;
+
+  const anyEditable = isNew ? true : canRoleEditTab(state.activeTab);
+  document.getElementById('modalFooterInfo').textContent = isNew
+    ? 'Al guardar, el sistema asignará un OP único y validará los cálculos en el servidor.'
+    : anyEditable
+      ? 'Los cálculos se recalculan en el servidor antes de guardar.'
+      : 'Solo lectura — tu rol no puede editar esta sección.';
+  document.getElementById('modalSave').style.display = anyEditable ? '' : 'none';
+  document.getElementById('modalSave').textContent = isNew ? 'Crear requerimiento' : 'Guardar cambios';
+
+  // Conectar el autocompletado del tarifario si M2 fue renderizado y es editable
+  if (tabsToRender.includes('m2') && (isNew || canRoleEditTab('m2'))) attachTarifarioSearch();
+}
+
+/* ============================================================
+   AUTOCOMPLETADO TARIFARIO
+   ============================================================ */
+
+function attachTarifarioSearch() {
+  const inp = document.getElementById('tarifSearch');
+  const results = document.getElementById('tarifResults');
+  const inpCantidad = document.getElementById('tarifCantidad');
+
+  if (!inp) return;
+
+  function normalize(s) {
+    return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function searchItems(q) {
+    if (!q || q.length < 2) return [];
+    const qn = normalize(q);
+    // Agrupar por descripción base
+    const grouped = {};
+    TARIFARIO.forEach(t => {
+      if (normalize(t.desc).includes(qn)) {
+        if (!grouped[t.desc]) grouped[t.desc] = { desc: t.desc, cat: t.catName, items: [] };
+        grouped[t.desc].items.push(t);
+      }
+    });
+    return Object.values(grouped);
+  }
+
+  function showResults() {
+    const q = inp.value.trim();
+    const items = searchItems(q);
+    if (items.length === 0) {
+      results.classList.remove('active');
+      return;
+    }
+    results.innerHTML = items.slice(0, 8).map(g => {
+      const minPrice = Math.min(...g.items.map(x => x.precio));
+      const ranges = g.items.length;
+      return `
+        <div class="tarifario-result" data-desc="${esc(g.desc)}">
+          <div>
+            <div class="tarifario-result-desc">${esc(g.desc)}</div>
+            <div class="tarifario-result-meta">
+              <span><span class="tarifario-cat-pill">${esc(g.cat)}</span></span>
+              <span>${ranges} ${ranges === 1 ? 'rango' : 'rangos'}</span>
+              <span>desde ${fmt.cop(minPrice)}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+    results.classList.add('active');
+
+    results.querySelectorAll('.tarifario-result').forEach(el => {
+      el.addEventListener('click', () => {
+        const desc = el.dataset.desc;
+        inp.value = desc;
+        results.classList.remove('active');
+        selectTarifByQuantity(desc);
+      });
+    });
+  }
+
+  function selectTarifByQuantity(desc) {
+    const cantidad = Number(inpCantidad.value) || 0;
+    const candidates = TARIFARIO.filter(t => t.desc === desc);
+    if (candidates.length === 0) return;
+    const match = candidates.find(t => cantidad >= t.min && cantidad <= t.max);
+    const codigo = document.getElementById('tarifCodigo');
+    const medida = document.getElementById('tarifMedida');
+    const precio = document.getElementById('tarifPrecio');
+    const info = document.getElementById('tarifInfo');
+
+    if (match) {
+      codigo.value = match.id;
+      medida.value = match.medida;
+      precio.value = fmt.cop(match.precio);
+      info.classList.add('active');
+      info.querySelector('div:nth-child(2)').innerHTML = `<strong>${esc(match.id)}</strong> · ${esc(match.desc)} — rango ${match.min}-${match.max} ${esc(match.medida)}s · precio antes de IVA: <strong>${fmt.cop(match.precio)}</strong>`;
+    } else if (cantidad > 0) {
+      // Fuera de rango
+      codigo.value = '';
+      medida.value = candidates[0].medida;
+      precio.value = '';
+      info.classList.add('active');
+      info.querySelector('svg').setAttribute('stroke', '#b07b15');
+      info.style.background = 'var(--color-warning-soft)';
+      info.style.borderColor = '#e2c777';
+      info.style.color = 'var(--color-warning)';
+      info.querySelector('div:nth-child(2)').innerHTML = `Cantidad <strong>${cantidad}</strong> está fuera de los rangos disponibles del tarifario para "${esc(desc)}". Rangos: ${candidates.map(c => `${c.min}-${c.max}`).join(' · ')}. Quedará marcado como precio personalizado.`;
+    }
+  }
+
+  inp.addEventListener('input', showResults);
+  inp.addEventListener('focus', showResults);
+  inpCantidad.addEventListener('input', () => {
+    if (inp.value.trim()) selectTarifByQuantity(inp.value.trim());
+  });
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.tarifario-search')) results.classList.remove('active');
+  });
+}
+
+/* ============================================================
+   VISTA: TARIFARIO
+   ============================================================ */
+
+function renderTarifario() {
+  const items = TARIFARIO.filter(t => t.cat === state.tarifarioCategoria);
+  const cat = CATEGORIAS.find(c => c.num === state.tarifarioCategoria);
+
+  return `
+    <div class="page-header">
+      <h1>Tarifario del Distrito</h1>
+      <p>Vigencia desde el 13 de abril de 2026 · Versión 3-2026 · 1.004 ítems en 10 categorías · Fuente única de verdad para los precios de referencia.</p>
+    </div>
+
+    <div class="cat-pills">
+      ${CATEGORIAS.map(c => `
+        <button class="cat-pill ${c.num === state.tarifarioCategoria ? 'active' : ''}" data-cat="${c.num}">
+          ${esc(c.name)}<span class="cat-pill-count">${c.count}</span>
+        </button>
+      `).join('')}
+    </div>
+
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Descripción</th>
+            <th>Características</th>
+            <th style="text-align:right;">Rango min</th>
+            <th style="text-align:right;">Rango max</th>
+            <th>Medida</th>
+            <th style="text-align:right;">Precio (sin IVA)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.length === 0 ? `<tr><td colspan="7" style="text-align:center; padding: 48px; color: var(--color-text-tertiary);">No hay ítems en esta categoría en la muestra demo.</td></tr>` :
+          items.map(t => `
+            <tr>
+              <td class="cell-mono">${esc(t.id)}</td>
+              <td><strong>${esc(t.desc)}</strong></td>
+              <td class="cell-truncate" style="max-width: 320px;" title="${esc(t.carac)}">${esc(t.carac)}</td>
+              <td class="cell-number">${fmt.num(t.min)}</td>
+              <td class="cell-number">${fmt.num(t.max)}</td>
+              <td>${esc(t.medida)}</td>
+              <td class="cell-number">${fmt.cop(t.precio)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      <div class="table-footer">
+        <div>Mostrando muestra demo de <strong>${items.length}</strong> ítems de la categoría <strong>${esc(cat?.name)}</strong> (${cat?.count} en producción).</div>
+      </div>
+    </div>
+  `;
+}
+
+function attachTarifario() {
+  document.querySelectorAll('.cat-pill').forEach(p => {
+    p.addEventListener('click', () => {
+      state.tarifarioCategoria = Number(p.dataset.cat);
+      render();
+    });
+  });
+}
+
+/* ============================================================
+   VISTA: REPORTES
+   ============================================================ */
+
+function renderReportes() {
+  // Por proyecto
+  const porProyecto = {};
+  REQUERIMIENTOS.forEach(r => {
+    const p = r.m2.proyecto;
+    if (!porProyecto[p]) porProyecto[p] = { ejecutado: 0, comprometido: 0, count: 0 };
+    porProyecto[p].comprometido += r.m3.valorEjec;
+    porProyecto[p].count++;
+    if (r.estadoTramite === 'Ejecutado') porProyecto[p].ejecutado += r.m3.valorEjec;
+  });
+
+  const proyectosOrdenados = Object.entries(porProyecto).sort((a, b) => b[1].comprometido - a[1].comprometido);
+
+  // Por comuna
+  const porComuna = {};
+  REQUERIMIENTOS.forEach(r => {
+    porComuna[r.m2.comuna] = (porComuna[r.m2.comuna] || 0) + r.m3.valorEjec;
+  });
+  const comunaMax = Math.max(...Object.values(porComuna));
+
+  return `
+    <div class="page-header">
+      <h1>Reportes y consolidados</h1>
+      <p>Vistas agregadas calculadas en vivo desde los requerimientos. Equivalentes a las hojas TABLAS, RESUMEN, PRESUPUESTO SUB SEC e INFORMES.</p>
+    </div>
+
+    <div class="panel" style="margin-bottom: 24px;">
+      <div class="panel-header">
+        <div class="panel-title">Ejecución por proyecto</div>
+        <div class="panel-action">Exportar Excel →</div>
+      </div>
+      <table class="data-table" style="margin: -16px;">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Proyecto</th>
+            <th>Subsec.</th>
+            <th style="text-align:right;">Req.</th>
+            <th style="text-align:right;">Comprometido</th>
+            <th style="text-align:right;">Ejecutado</th>
+            <th style="text-align:right;">% Ejec.</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${proyectosOrdenados.map(([code, data]) => {
+            const proy = PROYECTOS.find(p => p.codigo === code);
+            const pct = data.ejecutado / data.comprometido;
+            return `
+              <tr>
+                <td class="cell-mono">${esc(code)}</td>
+                <td class="cell-truncate">${esc(proy?.nombre || '—')}</td>
+                <td>${esc(proy?.subsec || '—')}</td>
+                <td class="cell-number">${data.count}</td>
+                <td class="cell-number">${fmt.cop(data.comprometido)}</td>
+                <td class="cell-number">${fmt.cop(data.ejecutado)}</td>
+                <td class="cell-number">${fmt.pct(pct)}</td>
+                <td style="width: 140px;">
+                  <div class="bar-track" style="height: 6px;"><div class="bar-fill" style="width: ${(pct * 100).toFixed(0)}%"></div></div>
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="dash-grid">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Distribución por comuna</div>
+        </div>
+        <div class="bar-chart">
+          ${Object.entries(porComuna).sort((a,b)=>b[1]-a[1]).slice(0, 8).map(([c, val]) => `
+            <div class="bar-row">
+              <div class="bar-label">Comuna ${esc(c)}</div>
+              <div class="bar-track">
+                <div class="bar-fill" style="width: ${(val/comunaMax*100).toFixed(0)}%"></div>
+              </div>
+              <div class="bar-value">${fmt.copShort(val)}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Seguimiento evidencias</div>
+        </div>
+        ${(() => {
+          const counts = { SPC_OK: 0, SPC_PEND: 0, OPER_OK: 0, OPER_PEND: 0 };
+          REQUERIMIENTOS.forEach(r => {
+            if (r.m2.evSpc === 'OK') counts.SPC_OK++;
+            else counts.SPC_PEND++;
+            if (r.m2.evOper === 'OK') counts.OPER_OK++;
+            else counts.OPER_PEND++;
+          });
+          return `
+            <div class="bar-chart">
+              <div class="bar-row">
+                <div class="bar-label">SPC · OK</div>
+                <div class="bar-track"><div class="bar-fill" style="width: ${(counts.SPC_OK/REQUERIMIENTOS.length*100).toFixed(0)}%"></div></div>
+                <div class="bar-value">${counts.SPC_OK} / ${REQUERIMIENTOS.length}</div>
+              </div>
+              <div class="bar-row">
+                <div class="bar-label">SPC · Pendiente</div>
+                <div class="bar-track"><div class="bar-fill gold" style="width: ${(counts.SPC_PEND/REQUERIMIENTOS.length*100).toFixed(0)}%"></div></div>
+                <div class="bar-value">${counts.SPC_PEND} / ${REQUERIMIENTOS.length}</div>
+              </div>
+              <div class="bar-row">
+                <div class="bar-label">Operador · OK</div>
+                <div class="bar-track"><div class="bar-fill" style="width: ${(counts.OPER_OK/REQUERIMIENTOS.length*100).toFixed(0)}%"></div></div>
+                <div class="bar-value">${counts.OPER_OK} / ${REQUERIMIENTOS.length}</div>
+              </div>
+              <div class="bar-row">
+                <div class="bar-label">Operador · Pendiente</div>
+                <div class="bar-track"><div class="bar-fill gold" style="width: ${(counts.OPER_PEND/REQUERIMIENTOS.length*100).toFixed(0)}%"></div></div>
+                <div class="bar-value">${counts.OPER_PEND} / ${REQUERIMIENTOS.length}</div>
+              </div>
+            </div>
+          `;
+        })()}
+      </div>
+    </div>
+  `;
+}
+
+/* ============================================================
+   VISTA: AUDITORÍA
+   ============================================================ */
+
+function renderAuditoria() {
+  return `
+    <div class="page-header">
+      <h1>Auditoría del sistema</h1>
+      <p>Registro inmutable de todas las modificaciones — colección <code style="font-family: var(--font-mono); font-size: 12px; background: var(--color-surface-alt); padding: 2px 6px; border-radius: 4px;">auditoria/</code> con retención 5 años (MIPG).</p>
+    </div>
+
+    <div class="table-toolbar">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" placeholder="Buscar por usuario, OP, acción...">
+      </div>
+      <select class="filter-select">
+        <option>Todos los usuarios</option>
+        <option>Daniel M.</option>
+        <option>Catalina R.</option>
+        <option>Carlos H.</option>
+      </select>
+      <select class="filter-select">
+        <option>Últimos 7 días</option>
+        <option>Últimos 30 días</option>
+        <option>Este año</option>
+      </select>
+      <button class="btn-secondary" style="margin-left: auto;">
+        <svg class="btn-icon" viewBox="0 0 24 24"><path d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16"/></svg>
+        Exportar log
+      </button>
+    </div>
+
+    <div class="panel">
+      <div class="timeline">
+        ${AUDITORIA.map(a => `
+          <div class="timeline-item">
+            <div class="timeline-time">${esc(a.ts)}</div>
+            <div class="timeline-content">
+              <div class="timeline-action">
+                <span class="timeline-user">
+                  <span class="user-avatar" style="width: 16px; height: 16px; font-size: 8px;">${esc(a.user.substring(0, 2).toUpperCase())}</span>
+                  ${esc(a.user)}
+                </span>
+                <span style="margin-left: 4px;">${esc(a.action)}</span>
+              </div>
+              <div class="timeline-details">${esc(a.details)}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+/* ============================================================
+   DRAWER DE COLUMNAS
+   ============================================================ */
+
+function openColumnsDrawer() {
+  state.columnsDrawerOpen = true;
+  state.columnsDrawerFilter = '';
+  document.getElementById('drawerSearchInput').value = '';
+  renderColumnsDrawer();
+  document.getElementById('drawerBackdrop').classList.add('active');
+  document.getElementById('columnsDrawer').classList.add('active');
+}
+
+function closeColumnsDrawer() {
+  state.columnsDrawerOpen = false;
+  document.getElementById('drawerBackdrop').classList.remove('active');
+  document.getElementById('columnsDrawer').classList.remove('active');
+}
+
+function renderColumnsDrawer() {
+  const f = state.columnsDrawerFilter.toLowerCase().trim();
+  const fNorm = f.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+  // Agrupar por momento
+  const grouped = {};
+  COLUMNAS_DETALLE.forEach(c => {
+    if (f) {
+      const haystack = (c.label + ' ' + c.col + ' ' + c.id).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (!haystack.includes(fNorm)) return;
+    }
+    if (!grouped[c.m]) grouped[c.m] = [];
+    grouped[c.m].push(c);
+  });
+
+  const order = ['M1', 'M2', 'M3', 'CONT', 'REV'];
+  const body = document.getElementById('drawerBody');
+
+  if (Object.keys(grouped).length === 0) {
+    body.innerHTML = `<div style="padding: 32px; text-align: center; color: var(--color-text-tertiary); font-size: 13px;">Ninguna columna coincide con "${esc(state.columnsDrawerFilter)}"</div>`;
+  } else {
+    body.innerHTML = order.filter(m => grouped[m]).map(m => {
+      const cols = grouped[m];
+      const allVisible = cols.every(c => state.columnasVisibles.includes(c.id));
+      return `
+        <div class="col-group">
+          <div class="col-group-header">
+            <div class="col-group-title">${esc(MOMENTOS_LABEL[m])} · ${cols.length} columna${cols.length === 1 ? '' : 's'}</div>
+            <span class="col-group-toggle" data-toggle-group="${m}">${allVisible ? 'Quitar todas' : 'Mostrar todas'}</span>
+          </div>
+          ${cols.map(c => `
+            <label class="col-item">
+              <input type="checkbox" data-col-id="${esc(c.id)}" ${state.columnasVisibles.includes(c.id) ? 'checked' : ''}>
+              <div class="col-item-info">
+                <div class="col-item-label">${esc(c.label)}</div>
+                <div class="col-item-meta">Col ${esc(c.col)} · ${esc(c.id)}</div>
+              </div>
+            </label>
+          `).join('')}
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Actualizar contador
+  document.getElementById('drawerCount').textContent = state.columnasVisibles.length;
+
+  // Conectar checkboxes
+  body.querySelectorAll('input[type="checkbox"][data-col-id]').forEach(cb => {
+    cb.addEventListener('change', e => {
+      const id = e.target.dataset.colId;
+      toggleColumna(id, e.target.checked);
+    });
+  });
+
+  // Conectar "Mostrar todas / Quitar todas" por momento
+  body.querySelectorAll('[data-toggle-group]').forEach(el => {
+    el.addEventListener('click', () => {
+      const m = el.dataset.toggleGroup;
+      const cols = COLUMNAS_DETALLE.filter(c => c.m === m);
+      const allVisible = cols.every(c => state.columnasVisibles.includes(c.id));
+      if (allVisible) {
+        // quitar todas las de ese momento, preservando orden de las demás
+        state.columnasVisibles = state.columnasVisibles.filter(id => {
+          const c = COLUMNAS_DETALLE.find(x => x.id === id);
+          return c && c.m !== m;
+        });
+      } else {
+        // agregar las que falten, manteniendo orden del array maestro
+        const setVis = new Set(state.columnasVisibles);
+        cols.forEach(c => setVis.add(c.id));
+        state.columnasVisibles = COLUMNAS_DETALLE.filter(c => setVis.has(c.id)).map(c => c.id);
+      }
+      renderColumnsDrawer();
+      refreshReqTableOnly();
+    });
+  });
+}
+
+function toggleColumna(id, visible) {
+  if (visible) {
+    if (!state.columnasVisibles.includes(id)) {
+      // Reinsertar manteniendo el orden del array maestro
+      const setVis = new Set(state.columnasVisibles);
+      setVis.add(id);
+      state.columnasVisibles = COLUMNAS_DETALLE.filter(c => setVis.has(c.id)).map(c => c.id);
+    }
+  } else {
+    state.columnasVisibles = state.columnasVisibles.filter(x => x !== id);
+  }
+  document.getElementById('drawerCount').textContent = state.columnasVisibles.length;
+  refreshReqTableOnly();
+}
+
+(function initDrawer() {
+  document.getElementById('drawerBackdrop').addEventListener('click', closeColumnsDrawer);
+  document.getElementById('drawerCloseBtn').addEventListener('click', closeColumnsDrawer);
+  document.getElementById('drawerApplyBtn').addEventListener('click', closeColumnsDrawer);
+  document.getElementById('drawerSearchInput').addEventListener('input', e => {
+    state.columnsDrawerFilter = e.target.value;
+    renderColumnsDrawer();
+  });
+  document.querySelectorAll('.drawer-quick-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const p = btn.dataset.preset;
+      if (p === 'default')      state.columnasVisibles = COLUMNAS_DETALLE.filter(c => c.def).map(c => c.id);
+      else if (p === 'all')     state.columnasVisibles = COLUMNAS_DETALLE.map(c => c.id);
+      else if (p === 'none')    state.columnasVisibles = [];
+      else if (['M1','M2','M3','CONT','REV'].includes(p))
+                                state.columnasVisibles = COLUMNAS_DETALLE.filter(c => c.m === p).map(c => c.id);
+      renderColumnsDrawer();
+      refreshReqTableOnly();
+    });
+  });
+  // ESC para cerrar
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && state.columnsDrawerOpen) closeColumnsDrawer();
+  });
+})();
+
+</script>
+</body>
+</html>
