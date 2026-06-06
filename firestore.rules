@@ -1,0 +1,83 @@
+rules_version = '2';
+
+// ============================================================================
+//  Reglas de seguridad de Cloud Firestore — proyecto matriz-logistica-37752
+//  App: ParticipacionLogistica
+// ============================================================================
+//
+//  ESTADO ACTUAL: FASE DE PRUEBAS (sin contraseñas de roles todavía).
+//
+//  La aplicación aún NO hace login real contra Firebase Auth: la pantalla de
+//  inicio solo selecciona un rol de forma local. Por eso todas las lecturas y
+//  escrituras a Firestore se hacen de forma ANÓNIMA (sin usuario autenticado).
+//
+//  Para poder probar la app, mientras no existan las contraseñas, se habilita
+//  acceso abierto de lectura/escritura LIMITADO EN EL TIEMPO. La fecha de
+//  expiración evita dejar la base de datos abierta indefinidamente: si llega
+//  esa fecha y aún no se han puesto las reglas de producción, simplemente
+//  ampliála en este archivo y vuelve a desplegar.
+//
+//  >>> Cuando se configuren las contraseñas / roles, BORRA el bloque de pruebas
+//  >>> y descomenta el bloque de PRODUCCIÓN del final.
+// ============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ----------------------------------------------------------------------
+    // BLOQUE DE PRUEBAS  (acceso abierto temporal — caduca el 2026-09-30)
+    // ----------------------------------------------------------------------
+    match /{document=**} {
+      allow read, write: if request.time < timestamp.date(2026, 9, 30);
+    }
+
+  }
+}
+
+// ============================================================================
+//  BLOQUE DE PRODUCCIÓN  (plantilla — activar cuando haya login + roles)
+//  --------------------------------------------------------------------------
+//  Requisitos para usar este bloque:
+//    1. La app debe autenticar con Firebase Auth (signInWithEmailAndPassword).
+//    2. Cada usuario debe tener un rol. Dos formas habituales:
+//         a) Custom claim `role` en el token (vía Cloud Function / Admin SDK), o
+//         b) Un documento en la colección `usuarios/{uid}` con un campo `rol`.
+//       El ejemplo de abajo usa la opción (b).
+//
+//  Roles de la app: logistico, financiero, contratista, revision, admin
+// ============================================================================
+//
+// service cloud.firestore {
+//   match /databases/{database}/documents {
+//
+//     function estaAutenticado() {
+//       return request.auth != null;
+//     }
+//
+//     function rolDe(uid) {
+//       return get(/databases/$(database)/documents/usuarios/$(uid)).data.rol;
+//     }
+//
+//     function esAdmin() {
+//       return estaAutenticado() && rolDe(request.auth.uid) == 'admin';
+//     }
+//
+//     // Perfil de usuario: cada quien lee el suyo; solo admin escribe roles.
+//     match /usuarios/{uid} {
+//       allow read:  if estaAutenticado() && (request.auth.uid == uid || esAdmin());
+//       allow write: if esAdmin();
+//     }
+//
+//     // Requerimientos: todo usuario autenticado lee; logístico y admin crean
+//     // y editan; los demás roles según necesidad de negocio.
+//     match /requerimientos/{docId} {
+//       allow read:   if estaAutenticado();
+//       allow create: if estaAutenticado() &&
+//                        rolDe(request.auth.uid) in ['logistico', 'admin'];
+//       allow update: if estaAutenticado() &&
+//                        rolDe(request.auth.uid) in ['logistico', 'financiero', 'contratista', 'revision', 'admin'];
+//       allow delete: if esAdmin();
+//     }
+//
+//   }
+// }
