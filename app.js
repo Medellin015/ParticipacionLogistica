@@ -2463,6 +2463,26 @@ function setRawValueOnReq(req, colId, value) {
   return true;
 }
 
+// Sinónimos de encabezados de Excel → id de columna.
+// Cubre variantes "humanas" frecuentes (p. ej. plantillas con "NOMBRE DEL EVENTO")
+// que no coinciden exactamente con el label de la columna. Las claves deben estar
+// normalizadas igual que norm() en parseExcelToReq: minúsculas, sin tildes,
+// sin espacios ni signos de puntuación.
+const HEADER_ALIASES = {
+  nombredelevento: 'evento', nombreevento: 'evento',
+  estadodeltramite: 'estadoTramite', estadotramite: 'estadoTramite',
+  instanciabeneficiario: 'instancia', beneficiario: 'instancia',
+  codigoproyecto: 'proyecto', codigodelproyecto: 'proyecto', codproyecto: 'proyecto',
+  nombreproyecto: 'nombreProy', nombredelproyecto: 'nombreProy',
+  actividadmga: 'mga',
+  lugardelevento: 'lugar', lugar: 'lugar',
+  fechadeentrega: 'fechaEntrega', fechaentrega: 'fechaEntrega',
+  horadeentrega: 'horaEntrega',
+  unidaddemedida: 'medida',
+  descripcionrequerimiento: 'desc', descripciondelrequerimiento: 'desc',
+  observaciones: 'obs', observacionrequerimiento: 'obs'
+};
+
 // Extrae texto plano de una celda ExcelJS (string, número, fórmula, rich text, fecha)
 function cellText(cell) {
   let v = cell ? cell.value : null;
@@ -2530,8 +2550,9 @@ async function parseExcelToReq(file) {
     row.eachCell((cell, colNumber) => {
       const txt = norm(cellText(cell));
       if (!txt) return;
-      if (byLabel[txt])   { score++; map[colNumber] = byLabel[txt]; }
-      else if (byId[txt]) { score++; map[colNumber] = byId[txt]; }
+      if (byLabel[txt])             { score++; map[colNumber] = byLabel[txt]; }
+      else if (byId[txt])           { score++; map[colNumber] = byId[txt]; }
+      else if (HEADER_ALIASES[txt]) { score++; map[colNumber] = HEADER_ALIASES[txt]; }
     });
     if (score > bestScore) { bestScore = score; headerRowIdx = r; headerMap = map; }
   }
