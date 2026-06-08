@@ -441,6 +441,13 @@ async function actualizarRequerimientoFirestore(req) {
   return req.id;
 }
 
+// Elimina un requerimiento de Firestore
+async function eliminarRequerimientoFirestore(id) {
+  const fb = await esperarFirebase();
+  await fb.deleteDoc(fb.doc(fb.db, COL_REQUERIMIENTOS, id));
+  return id;
+}
+
 // Sube los requerimientos de ejemplo a Firestore (idempotente: usa ids fijos)
 async function seedRequerimientos() {
   const fb = await esperarFirebase();
@@ -1323,6 +1330,27 @@ function closeModal() {
 
 document.getElementById('modalClose').addEventListener('click', closeModal);
 document.getElementById('modalCancel').addEventListener('click', closeModal);
+document.getElementById('modalDelete').addEventListener('click', async () => {
+  const r = state.editingReq;
+  if (!r || r.id === 'new') return;
+  if (!confirm(`¿Eliminar definitivamente el requerimiento ${r.op}?\n\nEvento: ${r.m2.evento || '—'}\n\nEsta acción no se puede deshacer.`)) return;
+  const btn = document.getElementById('modalDelete');
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Eliminando...';
+  try {
+    await eliminarRequerimientoFirestore(r.id);
+    showToast('Requerimiento eliminado', 'success');
+    await loadRequerimientos();
+    closeModal();
+    render();
+  } catch (err) {
+    console.error(err);
+    showToast('Error al eliminar: ' + err.message, 'error');
+    btn.disabled = false;
+    btn.textContent = original;
+  }
+});
 document.getElementById('modal').addEventListener('click', e => {
   if (e.target.id === 'modal') closeModal();
 });
@@ -1413,7 +1441,7 @@ function renderModalTabs() {
 function renderModalContent() {
   const r = state.editingReq;
   const isNew = r.id === 'new';
-  const tabsToRender = isNew ? ['m1', 'm2', 'm3', 'contratista', 'revision'] : [state.activeTab];
+  const tabsToRender = isNew ? ['m1', 'm2', 'm3', 'contratista'] : [state.activeTab];
 
   let html = '';
 
@@ -1823,6 +1851,13 @@ function renderModalContent() {
       : 'Solo lectura — tu rol no puede editar esta sección.';
   document.getElementById('modalSave').style.display = anyEditable ? '' : 'none';
   document.getElementById('modalSave').textContent = isNew ? 'Crear requerimiento' : 'Guardar cambios';
+
+  // Eliminar: disponible solo al editar un requerimiento existente (roles gestores)
+  const puedeEliminar = !isNew && ['logistico', 'admin'].includes(state.role);
+  const btnDelete = document.getElementById('modalDelete');
+  btnDelete.style.display = puedeEliminar ? '' : 'none';
+  btnDelete.disabled = false;
+  btnDelete.textContent = 'Eliminar';
 
   // Conectar el autocompletado del tarifario si M2 fue renderizado y es editable
   if (tabsToRender.includes('m2') && (isNew || canRoleEditTab('m2'))) attachTarifarioSearch();
