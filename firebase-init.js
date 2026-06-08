@@ -21,20 +21,16 @@
     measurementId: "G-749SP593N4"
   };
 
-  // Indicador visual del estado de conexión en la pantalla de login
-  function mostrarEstado(ok, mensaje) {
+  // Muestra un aviso en el login solo si la conexión a Firebase falla
+  function mostrarEstadoError(mensaje) {
     const insertar = () => {
-      const tag = document.querySelector('.login-demo-tag');
-      if (!tag || document.getElementById('fbStatusBanner')) return;
+      const anchor = document.getElementById('btnLogin');
+      if (!anchor || document.getElementById('fbStatusBanner')) return;
       const banner = document.createElement('div');
       banner.id = 'fbStatusBanner';
-      const color = ok ? '#2d6a4f' : '#9a2a2a';
-      const bg    = ok ? '#e1efe6' : '#f4dede';
-      banner.style.cssText = `margin-top:8px;padding:10px 12px;background:${bg};border-left:3px solid ${color};border-radius:4px;font-size:12px;color:${color};font-weight:500;line-height:1.4;`;
-      banner.innerHTML = (ok
-        ? `● Firebase conectado · <span style="font-family:'IBM Plex Mono',monospace;font-weight:600;">${firebaseConfig.projectId}</span>`
-        : `● Error de conexión a Firebase<br><span style="font-weight:400;opacity:0.85;">${String(mensaje).replace(/</g,'&lt;')}</span>`);
-      tag.parentNode.insertBefore(banner, tag.nextSibling);
+      banner.style.cssText = `margin-top:12px;padding:10px 12px;background:#f4dede;border-left:3px solid #9a2a2a;border-radius:4px;font-size:12px;color:#9a2a2a;font-weight:500;line-height:1.4;`;
+      banner.innerHTML = `● Error de conexión a Firebase<br><span style="font-weight:400;opacity:0.85;">${String(mensaje).replace(/</g,'&lt;')}</span>`;
+      anchor.parentNode.insertBefore(banner, anchor.nextSibling);
     };
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', insertar);
@@ -61,10 +57,9 @@
     };
 
     console.info('✓ Firebase inicializado · proyecto', firebaseConfig.projectId);
-    mostrarEstado(true);
     document.dispatchEvent(new CustomEvent('firebase-ready'));
   } catch (err) {
     console.error('✗ Error inicializando Firebase:', err);
     window.fb = { ready: false, error: err };
-    mostrarEstado(false, err.message);
+    mostrarEstadoError(err.message);
   }
