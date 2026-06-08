@@ -534,6 +534,54 @@ function recalcular(precio, cantidad, tarifaImp) {
   };
 }
 
+// Recalcula los valores derivados de M3 a partir de M2 (cantidad), precio y
+// tarifa de impuesto, los persiste en el requerimiento en edición y devuelve
+// el HTML del panel de cálculo (base + resultados). Es la fuente única de
+// verdad de los cálculos financieros mientras no exista una Cloud Function.
+function renderM3CalcInner(r) {
+  const isNew = r.id === 'new';
+  const dis = (isNew || canRoleEditTab('m3')) ? '' : 'disabled';
+  // La tarifa puede llegar como string desde el <select>: normalizar a número
+  r.m3.tarifaImp = Number(r.m3.tarifaImp) || 0;
+  Object.assign(r.m3, recalcular(r.m3.precio, r.m2.cantidad, r.m3.tarifaImp));
+  return `
+      <div class="form-grid cols-3">
+        <div class="form-group">
+          <label class="form-label">Cantidad <span class="hint">(de M2)</span></label>
+          <input type="number" class="form-input mono" value="${esc(r.m2.cantidad)}" disabled>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Precio compra/u</label>
+          <input type="text" class="form-input mono" value="${fmt.cop(r.m3.precio)}" disabled>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tarifa impuesto</label>
+          <select class="form-select" data-field="m3.tarifaImp" ${dis}>
+            ${CATALOGOS.tarifasImpuesto.map(t2 => `<option value="${t2}" ${t2 === r.m3.tarifaImp ? 'selected' : ''}>${(t2 * 100).toFixed(0)}%</option>`).join('')}
+          </select>
+        </div>
+      </div>
+
+      <div class="calc-panel">
+        <div class="calc-row"><div class="calc-label">Subtotal compra</div><div class="calc-value">${fmt.cop(r.m3.subtotal)}</div></div>
+        <div class="calc-row"><div class="calc-label">Valor impuesto (subtotal × tarifa)</div><div class="calc-value">${fmt.cop(r.m3.valorImp)}</div></div>
+        <div class="calc-row"><div class="calc-label">Total ejecutable con impuesto</div><div class="calc-value">${fmt.cop(r.m3.totalEjec)}</div></div>
+        <div class="calc-row"><div class="calc-label">% Honorarios (9,5%)</div><div class="calc-value">${fmt.cop(r.m3.honorarios)}</div></div>
+        <div class="calc-row"><div class="calc-label">IVA honorarios (19%)</div><div class="calc-value">${fmt.cop(r.m3.ivaHon)}</div></div>
+        <div class="calc-row"><div class="calc-label">Total honorarios</div><div class="calc-value">${fmt.cop(r.m3.totalHon)}</div></div>
+        <div class="calc-row"><div class="calc-label">GMF (4×1000)</div><div class="calc-value">${fmt.cop(r.m3.gmf)}</div></div>
+        <div class="calc-row"><div class="calc-label">Estampilla Justicia Familia (2%)</div><div class="calc-value">${fmt.cop(r.m3.estampilla)}</div></div>
+        <div class="calc-row total"><div class="calc-label">Valor ejecutado contrato</div><div class="calc-value">${fmt.cop(r.m3.valorEjec)}</div></div>
+      </div>`;
+}
+
+// Refresca en vivo el panel de cálculo de M3 (si está visible) tras cambiar
+// cantidad, precio o tarifa.
+function refreshM3Calc() {
+  const panel = document.getElementById('m3CalcPanel');
+  if (panel && state.editingReq) panel.innerHTML = renderM3CalcInner(state.editingReq);
+}
+
 /* ============================================================
    LOGIN
    ============================================================ */
@@ -1326,6 +1374,7 @@ function setReqPath(obj, path, value) {
     let value = el.value;
     if (el.type === 'number') value = value === '' ? null : Number(value);
     setReqPath(state.editingReq, field, value);
+    if (field === 'm3.tarifaImp') refreshM3Calc(); // recalcula al cambiar la tarifa
   };
   body.addEventListener('input', handler);
   body.addEventListener('change', handler);
@@ -1650,34 +1699,7 @@ function renderModalContent() {
         <div class="section-divider-sub">Datos provenientes del momento 2 (solo lectura aquí)</div>
       </div>
 
-      <div class="form-grid cols-3">
-        <div class="form-group">
-          <label class="form-label">Cantidad</label>
-          <input type="number" class="form-input mono" value="${esc(r.m2.cantidad)}" disabled>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Precio compra/u</label>
-          <input type="text" class="form-input mono" value="${fmt.cop(r.m3.precio)}" disabled>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Tarifa impuesto</label>
-          <select class="form-select" data-field="m3.tarifaImp" ${dis}>
-            ${CATALOGOS.tarifasImpuesto.map(t2 => `<option value="${t2}" ${t2 === r.m3.tarifaImp ? 'selected' : ''}>${(t2 * 100).toFixed(0)}%</option>`).join('')}
-          </select>
-        </div>
-      </div>
-
-      <div class="calc-panel">
-        <div class="calc-row"><div class="calc-label">Subtotal compra</div><div class="calc-value">${fmt.cop(r.m3.subtotal)}</div></div>
-        <div class="calc-row"><div class="calc-label">Valor impuesto (subtotal × tarifa)</div><div class="calc-value">${fmt.cop(r.m3.valorImp)}</div></div>
-        <div class="calc-row"><div class="calc-label">Total ejecutable con impuesto</div><div class="calc-value">${fmt.cop(r.m3.totalEjec)}</div></div>
-        <div class="calc-row"><div class="calc-label">% Honorarios (9,5%)</div><div class="calc-value">${fmt.cop(r.m3.honorarios)}</div></div>
-        <div class="calc-row"><div class="calc-label">IVA honorarios (19%)</div><div class="calc-value">${fmt.cop(r.m3.ivaHon)}</div></div>
-        <div class="calc-row"><div class="calc-label">Total honorarios</div><div class="calc-value">${fmt.cop(r.m3.totalHon)}</div></div>
-        <div class="calc-row"><div class="calc-label">GMF (4×1000)</div><div class="calc-value">${fmt.cop(r.m3.gmf)}</div></div>
-        <div class="calc-row"><div class="calc-label">Estampilla Justicia Familia (2%)</div><div class="calc-value">${fmt.cop(r.m3.estampilla)}</div></div>
-        <div class="calc-row total"><div class="calc-label">Valor ejecutado contrato</div><div class="calc-value">${fmt.cop(r.m3.valorEjec)}</div></div>
-      </div>
+      <div id="m3CalcPanel">${renderM3CalcInner(r)}</div>
 
       <div class="section-divider">
         <div class="section-divider-title">Proveedor y facturación</div>
@@ -1909,6 +1931,7 @@ function attachTarifarioSearch() {
     if (codigo !== undefined)   setReqPath(state.editingReq, 'm2.tarifario', codigo);
     if (medida !== undefined)   setReqPath(state.editingReq, 'm2.medida', medida);
     if (precio !== undefined)   setReqPath(state.editingReq, 'm3.precio', precio);
+    refreshM3Calc(); // refleja cantidad/precio en el tercer momento
   }
 
   function selectTarifByQuantity(desc) {
