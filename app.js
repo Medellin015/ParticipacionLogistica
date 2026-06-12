@@ -295,6 +295,7 @@ const COLUMNAS_DETALLE = [
   // === Tercer momento — Financiero (AC-AQ) ===
   { id: 'precio',          col: 'AC', m: 'M3', label: 'Precio compra/u',             def: false, num: true,   acc: r => fmt.cop(r.m3.precio) },
   { id: 'subtotal',        col: 'AD', m: 'M3', label: 'Subtotal compra',             def: false, num: true,   acc: r => fmt.cop(r.m3.subtotal) },
+  { id: 'administracion',  col: 'AD2',m: 'M3', label: 'Administración',              def: false, num: true,   acc: r => fmt.cop(r.m3.administracion || 0) },
   { id: 'tarifaImp',       col: 'AE', m: 'M3', label: 'Tarifa Impto',                def: false, num: true,   acc: r => fmt.pct(r.m3.tarifaImp) },
   { id: 'valorImp',        col: 'AF', m: 'M3', label: 'Valor Impto',                 def: false, num: true,   acc: r => fmt.cop(r.m3.valorImp) },
   { id: 'totalEjec',       col: 'AG', m: 'M3', label: 'Total ejec. c/Impto',         def: false, num: true,   acc: r => fmt.cop(r.m3.totalEjec) },
@@ -405,6 +406,8 @@ async function loadRequerimientos() {
   const fb = await esperarFirebase();
   const snap = await fb.getDocs(fb.collection(fb.db, COL_REQUERIMIENTOS));
   REQUERIMIENTOS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  // Migrar requerimientos antiguos (un ítem) al modelo de items[] y refrescar totales
+  REQUERIMIENTOS.forEach(r => recalcularReq(r));
   // Orden estable por opSeq si existe, luego por OP
   REQUERIMIENTOS.sort((a, b) => (a.opSeq || 0) - (b.opSeq || 0) || String(a.op).localeCompare(String(b.op)));
   return REQUERIMIENTOS;
@@ -541,44 +544,171 @@ function recalcular(precio, cantidad, tarifaImp) {
   };
 }
 
-// Recalcula los valores derivados de M3 a partir de M2 (cantidad), precio y
-// tarifa de impuesto, los persiste en el requerimiento en edición y devuelve
-// el HTML del panel de cálculo (base + resultados). Es la fuente única de
-// verdad de los cálculos financieros mientras no exista una Cloud Function.
-function renderM3CalcInner(r) {
-  const isNew = r.id === 'new';
-  const dis = (isNew || canRoleEditTab('m3')) ? '' : 'disabled';
-  // La tarifa puede llegar como string desde el <select>: normalizar a número
-  r.m3.tarifaImp = Number(r.m3.tarifaImp) || 0;
-  Object.assign(r.m3, recalcular(r.m3.precio, r.m2.cantidad, r.m3.tarifaImp));
+// ---- Modelo de ítems: un requerimiento puede tener varias líneas/ítems ----
+function nuevoItem() {
+  return { desc: '', tarifario: '', medida: '', cantidad: 0, precio: 0,
+           tarifaImp: 0.19, adminPct: 0, obs: '', evSpc: 'PENDIENTE', evOper: 'PENDIENTE' };
+}
+
+// Garantiza r.items[]; migra requerimientos antiguos de un solo ítem
+function migrarItems(r) {
+  if (Array.isArray(r.items) && r.items.length) return r.items;
+  r.items = [{
+    desc: r.m2?.desc || '', tarifario: r.m2?.tarifario || '', medida: r.m2?.medida || '',
+    cantidad: Number(r.m2?.cantidad) || 0, precio: Number(r.m3?.precio) || 0,
+    tarifaImp: Number(r.m3?.tarifaImp) || 0.19, adminPct: Number(r.m3?.adminPct) || 0,
+    obs: r.m2?.obs || '', evSpc: r.m2?.evSpc || 'PENDIENTE', evOper: r.m2?.evOper || 'PENDIENTE'
+  }];
+  return r.items;
+}
+
+// Cálculo financiero de UN ítem. Administración = % sobre el subtotal;
+// el IVA (tarifa impuesto) se calcula SOLO sobre el subtotal.
+function calcItem(it) {
+  const cantidad = Number(it.cantidad) || 0;
+  const precio = Number(it.precio) || 0;
+  const tarifaImp = Number(it.tarifaImp) || 0;
+  const adminPct = Number(it.adminPct) || 0;
+  const subtotal = precio * cantidad;
+  const administracion = subtotal * adminPct;
+  const valorImp = subtotal * tarifaImp;            // IVA solo sobre el subtotal
+  const totalEjec = subtotal + administracion + valorImp;
+  const honorarios = totalEjec * 0.095;
+  const ivaHon = honorarios * 0.19;
+  const totalHon = honorarios + ivaHon;
+  const gmf = (totalEjec / 1000) * 4;
+  const estampilla = totalEjec * 0.02;
+  const valorEjec = totalEjec + totalHon;
+  return Object.fromEntries(Object.entries(
+    { subtotal, administracion, valorImp, totalEjec, honorarios, ivaHon, totalHon, gmf, estampilla, valorEjec }
+  ).map(([k, v]) => [k, Math.round(v)]));
+}
+
+// Recalcula cada ítem y vuelca los TOTALES (suma) en m3 + representativos en m2,
+// para que tabla, dashboard y exportación sigan funcionando con los agregados.
+function recalcularReq(r) {
+  migrarItems(r);
+  const claves = ['subtotal','administracion','valorImp','totalEjec','honorarios','ivaHon','totalHon','gmf','estampilla','valorEjec'];
+  const tot = Object.fromEntries(claves.map(k => [k, 0]));
+  let cantidadTotal = 0;
+  r.items.forEach(it => {
+    it.cantidad = Number(it.cantidad) || 0;
+    it.precio = Number(it.precio) || 0;
+    it.tarifaImp = Number(it.tarifaImp) || 0;
+    it.adminPct = Number(it.adminPct) || 0;
+    const c = calcItem(it);
+    claves.forEach(k => tot[k] += c[k]);
+    cantidadTotal += it.cantidad;
+  });
+  Object.assign(r.m3, tot);
+  const first = r.items[0] || nuevoItem();
+  r.m2.desc = first.desc; r.m2.tarifario = first.tarifario; r.m2.medida = first.medida;
+  r.m2.cantidad = cantidadTotal; r.m2.obs = first.obs;
+  r.m2.evSpc = first.evSpc; r.m2.evOper = first.evOper;
+  r.m3.precio = first.precio; r.m3.tarifaImp = first.tarifaImp;
+  return r;
+}
+
+// Tarjeta editable de un ítem (usada en M2)
+function renderItemCard(it, i, dis, total) {
+  const c = calcItem(it);
+  const tarif = TARIFARIO.find(x => x.id === it.tarifario);
   return `
-      <div class="form-grid cols-3">
-        <div class="form-group">
-          <label class="form-label">Cantidad <span class="hint">(de M2)</span></label>
-          <input type="number" class="form-input mono" value="${esc(r.m2.cantidad)}" disabled>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Precio compra/u</label>
-          <input type="text" class="form-input mono" value="${fmt.cop(r.m3.precio)}" disabled>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Tarifa impuesto</label>
-          <select class="form-select" data-field="m3.tarifaImp" ${dis}>
-            ${CATALOGOS.tarifasImpuesto.map(t2 => `<option value="${t2}" ${t2 === r.m3.tarifaImp ? 'selected' : ''}>${(t2 * 100).toFixed(0)}%</option>`).join('')}
-          </select>
-        </div>
+  <div class="item-card" data-idx="${i}">
+    <div class="item-card-head">
+      <span class="item-card-title">Ítem ${i + 1}</span>
+      ${(!dis && total > 1) ? `<button type="button" class="item-remove" data-idx="${i}" title="Eliminar ítem">✕ Quitar</button>` : ''}
+    </div>
+    <div class="form-grid cols-3">
+      <div class="form-group span-2">
+        <label class="form-label">Descripción <span class="hint">(autocompleta del tarifario)</span></label>
+        <input type="text" class="form-input item-desc" list="tarifDescList" data-idx="${i}" value="${esc(it.desc)}" placeholder="Ej: Botella de agua" ${dis}>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cantidad <span class="required">*</span> <span class="hint">(=21*3)</span></label>
+        <input type="text" class="form-input mono item-cantidad" data-idx="${i}" value="${esc(it.cantidad)}" placeholder="80" ${dis}>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Código tarifario</label>
+        <input type="text" class="form-input mono item-codigo" data-idx="${i}" value="${esc(it.tarifario)}" placeholder="AL 0005" ${dis}>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Unidad <span class="hint">(auto)</span></label>
+        <input type="text" class="form-input item-medida" data-idx="${i}" value="${esc(it.medida)}" ${dis}>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Precio unitario</label>
+        <input type="text" class="form-input mono item-precio" data-idx="${i}" value="${esc(it.precio)}" placeholder="0" ${dis}>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tarifa impuesto (IVA)</label>
+        <select class="form-select item-tarifa" data-idx="${i}" ${dis}>
+          ${CATALOGOS.tarifasImpuesto.map(t2 => `<option value="${t2}" ${Number(it.tarifaImp) === t2 ? 'selected' : ''}>${(t2 * 100).toFixed(0)}%</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Administración % <span class="hint">(antes del IVA)</span></label>
+        <input type="number" class="form-input mono item-admin" data-idx="${i}" min="0" max="100" step="0.1" value="${esc(Number(it.adminPct) * 100)}" placeholder="0" ${dis}>
+      </div>
+      <div class="form-group span-2">
+        <label class="form-label">Observaciones del ítem</label>
+        <input type="text" class="form-input item-obs" data-idx="${i}" value="${esc(it.obs)}" ${dis}>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Evidencia SPC</label>
+        <select class="form-select item-evspc" data-idx="${i}" ${dis}>
+          ${CATALOGOS.estadosEvidencia.map(e => `<option ${e === it.evSpc ? 'selected' : ''}>${esc(e)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Evidencia Operador</label>
+        <select class="form-select item-evoper" data-idx="${i}" ${dis}>
+          ${CATALOGOS.estadosEvidencia.map(e => `<option ${e === it.evOper ? 'selected' : ''}>${esc(e)}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="item-card-total">Valor ejecutado del ítem: <strong>${fmt.cop(c.valorEjec)}</strong>${tarif ? ` · <span class="hint">${esc(tarif.id)} · rango ${tarif.min}-${tarif.max}</span>` : ''}</div>
+  </div>`;
+}
+
+// Panel de M3: resumen de cálculo por ítem + totales (solo lectura)
+function renderM3CalcInner(r) {
+  recalcularReq(r);
+  const filas = r.items.map((it, i) => {
+    const c = calcItem(it);
+    return `<tr>
+      <td>${i + 1}</td>
+      <td class="ic-desc">${esc(it.desc || it.tarifario || '—')}</td>
+      <td>${fmt.num(it.cantidad)}</td>
+      <td>${fmt.cop(it.precio)}</td>
+      <td>${fmt.cop(c.subtotal)}</td>
+      <td>${(Number(it.adminPct) * 100).toFixed(1)}% · ${fmt.cop(c.administracion)}</td>
+      <td>${(Number(it.tarifaImp) * 100).toFixed(0)}% · ${fmt.cop(c.valorImp)}</td>
+      <td>${fmt.cop(c.valorEjec)}</td>
+    </tr>`;
+  }).join('');
+  return `
+      <div class="items-calc-wrap">
+        <table class="items-calc-table">
+          <thead><tr>
+            <th>#</th><th class="ic-desc">Ítem</th><th>Cant.</th><th>Precio/u</th>
+            <th>Subtotal</th><th>Administración</th><th>IVA</th><th>Valor ejec.</th>
+          </tr></thead>
+          <tbody>${filas}</tbody>
+        </table>
       </div>
 
       <div class="calc-panel">
-        <div class="calc-row"><div class="calc-label">Subtotal compra</div><div class="calc-value">${fmt.cop(r.m3.subtotal)}</div></div>
-        <div class="calc-row"><div class="calc-label">Valor impuesto (subtotal × tarifa)</div><div class="calc-value">${fmt.cop(r.m3.valorImp)}</div></div>
-        <div class="calc-row"><div class="calc-label">Total ejecutable con impuesto</div><div class="calc-value">${fmt.cop(r.m3.totalEjec)}</div></div>
-        <div class="calc-row"><div class="calc-label">% Honorarios (9,5%)</div><div class="calc-value">${fmt.cop(r.m3.honorarios)}</div></div>
+        <div class="calc-row"><div class="calc-label">Subtotal (todos los ítems)</div><div class="calc-value">${fmt.cop(r.m3.subtotal)}</div></div>
+        <div class="calc-row"><div class="calc-label">Administración</div><div class="calc-value">${fmt.cop(r.m3.administracion)}</div></div>
+        <div class="calc-row"><div class="calc-label">Valor impuesto (IVA sobre subtotal)</div><div class="calc-value">${fmt.cop(r.m3.valorImp)}</div></div>
+        <div class="calc-row"><div class="calc-label">Total ejecutable</div><div class="calc-value">${fmt.cop(r.m3.totalEjec)}</div></div>
+        <div class="calc-row"><div class="calc-label">Honorarios (9,5%)</div><div class="calc-value">${fmt.cop(r.m3.honorarios)}</div></div>
         <div class="calc-row"><div class="calc-label">IVA honorarios (19%)</div><div class="calc-value">${fmt.cop(r.m3.ivaHon)}</div></div>
         <div class="calc-row"><div class="calc-label">Total honorarios</div><div class="calc-value">${fmt.cop(r.m3.totalHon)}</div></div>
         <div class="calc-row"><div class="calc-label">GMF (4×1000)</div><div class="calc-value">${fmt.cop(r.m3.gmf)}</div></div>
         <div class="calc-row"><div class="calc-label">Estampilla Justicia Familia (2%)</div><div class="calc-value">${fmt.cop(r.m3.estampilla)}</div></div>
-        <div class="calc-row total"><div class="calc-label">Valor ejecutado contrato</div><div class="calc-value">${fmt.cop(r.m3.valorEjec)}</div></div>
+        <div class="calc-row total"><div class="calc-label">Valor ejecutado contrato (total)</div><div class="calc-value">${fmt.cop(r.m3.valorEjec)}</div></div>
       </div>`;
 }
 
@@ -1317,8 +1447,9 @@ function newEmptyReq() {
     m1: { subsec: '', enlace: '', fechaElab: new Date().toISOString().substring(0,10) },
     m2: { evento: '', proyecto: '', comuna: '', mga: '', actDet: '', fechaEntrega: '', lugar: '', persona: '', contacto: '',
           tarifario: '', desc: '', medida: '', cantidad: 0, obs: '', evSpc: 'PENDIENTE', evOper: 'PENDIENTE' },
-    m3: { precio: 0, subtotal: 0, tarifaImp: 0.19, valorImp: 0, totalEjec: 0, honorarios: 0, ivaHon: 0, totalHon: 0, gmf: 0, estampilla: 0, valorEjec: 0,
+    m3: { precio: 0, subtotal: 0, administracion: 0, tarifaImp: 0.19, valorImp: 0, totalEjec: 0, honorarios: 0, ivaHon: 0, totalHon: 0, gmf: 0, estampilla: 0, valorEjec: 0,
           proveedor: '', nit: '', factura: '', estadoReq: 'A ejecución', conciliacion: 'PENDIENTE', tipoRec: 'ORD' },
+    items: [nuevoItem()],
     estadoTramite: 'En cotización'
   };
 }
@@ -1523,7 +1654,7 @@ function renderModalContent() {
   }
 
   if (t === 'm2') {
-    const tarif = TARIFARIO.find(x => x.id === r.m2.tarifario);
+    migrarItems(r);
     html += `
       <div class="form-banner">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
@@ -1634,66 +1765,17 @@ function renderModalContent() {
       </div>
 
       <div class="section-divider">
-        <div class="section-divider-title">Conexión con Tarifario del Distrito</div>
-        <div class="section-divider-sub">Escribe la descripción para buscar, o ingresa directamente el código tarifario · la cantidad admite fórmulas tipo Excel (=21*3)</div>
+        <div class="section-divider-title">Ítems del requerimiento</div>
+        <div class="section-divider-sub">Agrega uno o más ítems del tarifario. Escribe la descripción (autocompleta) o el código directo · la cantidad admite fórmulas tipo Excel (=21*3)</div>
       </div>
 
-      <div class="form-grid cols-3">
-        <div class="form-group span-2 tarifario-search">
-          <label class="form-label">Descripción del requerimiento <span class="hint">(busca en el tarifario)</span></label>
-          <input type="text" class="form-input" id="tarifSearch" value="${esc(r.m2.desc)}" placeholder="Empieza a escribir, ej: 'botella de agua'..." ${dis}>
-          <div class="tarifario-results" id="tarifResults"></div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Cantidad <span class="required">*</span> <span class="hint">(admite =21*3)</span></label>
-          <input type="text" class="form-input mono" id="tarifCantidad" value="${esc(r.m2.cantidad)}" placeholder="80  ·  =21*3  ·  =15+9" ${dis}>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Código tarifario <span class="hint">(o ingrésalo directo)</span></label>
-          <input type="text" class="form-input mono" id="tarifCodigo" value="${esc(r.m2.tarifario)}" placeholder="Ej: AL 0005" ${dis}>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Unidad de medida <span class="hint">(auto)</span></label>
-          <input type="text" class="form-input" id="tarifMedida" value="${esc(r.m2.medida)}" disabled>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Precio unitario <span class="hint">(auto)</span></label>
-          <input type="text" class="form-input computed" id="tarifPrecio" value="${tarif ? fmt.cop(tarif.precio) : ''}" disabled>
-        </div>
+      <datalist id="tarifDescList">
+        ${[...new Set(TARIFARIO.map(t => t.desc))].map(d => `<option value="${esc(d)}"></option>`).join('')}
+      </datalist>
+      <div id="itemsContainer">
+        ${r.items.map((it, i) => renderItemCard(it, i, dis, r.items.length)).join('')}
       </div>
-
-      <div class="tarifario-info-box ${tarif ? 'active' : ''}" id="tarifInfo">
-        <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
-        <div>
-          ${tarif ? `<strong>${esc(tarif.id)}</strong> · ${esc(tarif.desc)} — rango ${tarif.min}-${tarif.max} ${esc(tarif.medida)}s · precio antes de IVA: <strong>${fmt.cop(tarif.precio)}</strong>` : ''}
-        </div>
-        <a class="text-mono" style="font-size: 11px; color: var(--color-accent); cursor: pointer;">Ver detalle del ítem →</a>
-      </div>
-
-      <div class="form-grid" style="margin-top: 16px;">
-        <div class="form-group span-2">
-          <label class="form-label">Observaciones del requerimiento</label>
-          <textarea class="form-textarea" data-field="m2.obs" ${dis}>${esc(r.m2.obs)}</textarea>
-        </div>
-      </div>
-
-      <div class="section-divider">
-        <div class="section-divider-title">Estado de evidencias</div>
-      </div>
-      <div class="form-grid">
-        <div class="form-group">
-          <label class="form-label">Estado evidencia SPC</label>
-          <select class="form-select" data-field="m2.evSpc" ${dis}>
-            ${CATALOGOS.estadosEvidencia.map(e => `<option ${e === r.m2.evSpc ? 'selected' : ''}>${esc(e)}</option>`).join('')}
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Estado evidencia Operador</label>
-          <select class="form-select" data-field="m2.evOper" ${dis}>
-            ${CATALOGOS.estadosEvidencia.map(e => `<option ${e === r.m2.evOper ? 'selected' : ''}>${esc(e)}</option>`).join('')}
-          </select>
-        </div>
-      </div>
+      ${dis ? '' : `<button type="button" class="btn-secondary" id="btnAgregarItem" style="margin-top:8px;">+ Agregar ítem</button>`}
     `;
   }
 
@@ -1727,8 +1809,8 @@ function renderModalContent() {
       </div>
 
       <div class="section-divider">
-        <div class="section-divider-title">Base del cálculo</div>
-        <div class="section-divider-sub">Datos provenientes del momento 2 (solo lectura aquí)</div>
+        <div class="section-divider-title">Desglose financiero por ítem</div>
+        <div class="section-divider-sub">Se calcula automáticamente desde los ítems del momento 2 · Administración antes del IVA · IVA solo sobre el subtotal</div>
       </div>
 
       <div id="m3CalcPanel">${renderM3CalcInner(r)}</div>
@@ -1864,7 +1946,7 @@ function renderModalContent() {
   btnDelete.textContent = 'Eliminar';
 
   // Conectar el autocompletado del tarifario si M2 fue renderizado y es editable
-  if (tabsToRender.includes('m2') && (isNew || canRoleEditTab('m2'))) attachTarifarioSearch();
+  if (tabsToRender.includes('m2') && (isNew || canRoleEditTab('m2'))) attachItemsEditor();
 
   // Conectar la carga de Excel en modo creación
   if (isNew) attachExcelUpload();
@@ -1892,172 +1974,75 @@ function evaluarCantidad(raw) {
   }
 }
 
-function attachTarifarioSearch() {
-  const inp = document.getElementById('tarifSearch');
-  const results = document.getElementById('tarifResults');
-  const inpCantidad = document.getElementById('tarifCantidad');
-  const inpCodigo = document.getElementById('tarifCodigo');
+// Editor de ítems del requerimiento (M2). Maneja varios ítems con autocompletado
+// del tarifario (por descripción o código), agregar/quitar y recálculo en vivo.
+function attachItemsEditor() {
+  const cont = document.getElementById('itemsContainer');
+  if (!cont || !state.editingReq) return;
+  const r = state.editingReq;
 
-  if (!inp) return;
-
-  function normalize(s) {
-    return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  function aplicarPorDesc(it) {
+    const cands = TARIFARIO.filter(t => t.desc.toLowerCase() === String(it.desc || '').toLowerCase());
+    if (!cands.length) return;
+    const m = cands.find(t => it.cantidad >= t.min && it.cantidad <= t.max) || cands[0];
+    it.tarifario = m.id; it.medida = m.medida; it.precio = m.precio;
+  }
+  function aplicarPorCodigo(it) {
+    const m = TARIFARIO.find(t => t.id.toUpperCase() === String(it.tarifario || '').trim().toUpperCase());
+    if (!m) return;
+    if (!it.desc) it.desc = m.desc;
+    it.medida = m.medida; it.precio = m.precio;
+  }
+  function rerender() {
+    cont.innerHTML = r.items.map((it, i) => renderItemCard(it, i, '', r.items.length)).join('');
+    refreshM3Calc();
   }
 
-  function searchItems(q) {
-    if (!q || q.length < 2) return [];
-    const qn = normalize(q);
-    // Agrupar por descripción base
-    const grouped = {};
-    TARIFARIO.forEach(t => {
-      if (normalize(t.desc).includes(qn)) {
-        if (!grouped[t.desc]) grouped[t.desc] = { desc: t.desc, cat: t.catName, items: [] };
-        grouped[t.desc].items.push(t);
-      }
-    });
-    return Object.values(grouped);
-  }
-
-  function showResults() {
-    const q = inp.value.trim();
-    const items = searchItems(q);
-    if (items.length === 0) {
-      results.classList.remove('active');
-      return;
+  const handle = e => {
+    const el = e.target;
+    const idx = el.dataset && el.dataset.idx;
+    if (idx == null) return;
+    const it = r.items[Number(idx)];
+    if (!it) return;
+    const commit = e.type === 'change';
+    if (el.classList.contains('item-desc')) {
+      it.desc = el.value;
+      if (commit) { aplicarPorDesc(it); rerender(); return; }
+    } else if (el.classList.contains('item-cantidad')) {
+      const n = evaluarCantidad(el.value) ?? (Number(el.value) || 0);
+      it.cantidad = n;
+      if (commit) { if (String(el.value).trim().startsWith('=')) el.value = n; aplicarPorDesc(it); rerender(); return; }
+    } else if (el.classList.contains('item-codigo')) {
+      it.tarifario = el.value;
+      if (commit) { aplicarPorCodigo(it); rerender(); return; }
+    } else if (el.classList.contains('item-medida')) {
+      it.medida = el.value;
+    } else if (el.classList.contains('item-precio')) {
+      it.precio = Number(el.value) || 0;
+    } else if (el.classList.contains('item-tarifa')) {
+      it.tarifaImp = Number(el.value) || 0;
+    } else if (el.classList.contains('item-admin')) {
+      it.adminPct = (Number(el.value) || 0) / 100;
+    } else if (el.classList.contains('item-obs')) {
+      it.obs = el.value;
+    } else if (el.classList.contains('item-evspc')) {
+      it.evSpc = el.value;
+    } else if (el.classList.contains('item-evoper')) {
+      it.evOper = el.value;
     }
-    results.innerHTML = items.slice(0, 8).map(g => {
-      const minPrice = Math.min(...g.items.map(x => x.precio));
-      const ranges = g.items.length;
-      return `
-        <div class="tarifario-result" data-desc="${esc(g.desc)}">
-          <div>
-            <div class="tarifario-result-desc">${esc(g.desc)}</div>
-            <div class="tarifario-result-meta">
-              <span><span class="tarifario-cat-pill">${esc(g.cat)}</span></span>
-              <span>${ranges} ${ranges === 1 ? 'rango' : 'rangos'}</span>
-              <span>desde ${fmt.cop(minPrice)}</span>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('');
-    results.classList.add('active');
-
-    results.querySelectorAll('.tarifario-result').forEach(el => {
-      el.addEventListener('click', () => {
-        const desc = el.dataset.desc;
-        inp.value = desc;
-        results.classList.remove('active');
-        selectTarifByQuantity(desc);
-      });
-    });
-  }
-
-  // Restaura el estilo del info-box a su estado normal (verde)
-  function infoBoxNormal(info) {
-    info.classList.add('active');
-    info.querySelector('svg').setAttribute('stroke', 'currentColor');
-    info.style.background = '';
-    info.style.borderColor = '';
-    info.style.color = '';
-  }
-
-  // Sincroniza los campos del tarifario hacia el objeto en edición
-  function syncTarifABoreq(desc, cantidad, codigo, medida, precio) {
-    if (!state.editingReq) return;
-    if (desc !== undefined)     setReqPath(state.editingReq, 'm2.desc', desc);
-    if (cantidad !== undefined) setReqPath(state.editingReq, 'm2.cantidad', cantidad);
-    if (codigo !== undefined)   setReqPath(state.editingReq, 'm2.tarifario', codigo);
-    if (medida !== undefined)   setReqPath(state.editingReq, 'm2.medida', medida);
-    if (precio !== undefined)   setReqPath(state.editingReq, 'm3.precio', precio);
-    refreshM3Calc(); // refleja cantidad/precio en el tercer momento
-  }
-
-  function selectTarifByQuantity(desc) {
-    // Usa el evaluador: funciona aunque la cantidad sea una fórmula sin evaluar
-    const cantidad = evaluarCantidad(inpCantidad.value) ?? (Number(inpCantidad.value) || 0);
-    const candidates = TARIFARIO.filter(t => t.desc === desc);
-    if (candidates.length === 0) return;
-    const match = candidates.find(t => cantidad >= t.min && cantidad <= t.max);
-    const codigo = document.getElementById('tarifCodigo');
-    const medida = document.getElementById('tarifMedida');
-    const precio = document.getElementById('tarifPrecio');
-    const info = document.getElementById('tarifInfo');
-
-    if (match) {
-      codigo.value = match.id;
-      medida.value = match.medida;
-      precio.value = fmt.cop(match.precio);
-      syncTarifABoreq(desc, cantidad, match.id, match.medida, match.precio);
-      infoBoxNormal(info);
-      info.querySelector('div:nth-child(2)').innerHTML = `<strong>${esc(match.id)}</strong> · ${esc(match.desc)} — rango ${match.min}-${match.max} ${esc(match.medida)}s · precio antes de IVA: <strong>${fmt.cop(match.precio)}</strong>`;
-    } else if (cantidad > 0) {
-      // Fuera de rango
-      codigo.value = '';
-      medida.value = candidates[0].medida;
-      precio.value = '';
-      syncTarifABoreq(desc, cantidad, '', candidates[0].medida, 0);
-      info.classList.add('active');
-      info.querySelector('svg').setAttribute('stroke', '#b07b15');
-      info.style.background = 'var(--color-warning-soft)';
-      info.style.borderColor = '#e2c777';
-      info.style.color = 'var(--color-warning)';
-      info.querySelector('div:nth-child(2)').innerHTML = `Cantidad <strong>${cantidad}</strong> está fuera de los rangos disponibles del tarifario para "${esc(desc)}". Rangos: ${candidates.map(c => `${c.min}-${c.max}`).join(' · ')}. Quedará marcado como precio personalizado.`;
-    }
-  }
-
-  // Al ingresar un código tarifario directamente, autocompleta la descripción
-  function selectTarifByCodigo(rawCodigo) {
-    const codigo = rawCodigo.trim().toUpperCase();
-    if (!codigo) return;
-    const item = TARIFARIO.find(t => t.id.toUpperCase() === codigo);
-    const medida = document.getElementById('tarifMedida');
-    const precio = document.getElementById('tarifPrecio');
-    const info = document.getElementById('tarifInfo');
-    if (item) {
-      inp.value = item.desc;          // descripción automática a partir del código
-      medida.value = item.medida;
-      precio.value = fmt.cop(item.precio);
-      syncTarifABoreq(item.desc, undefined, item.id, item.medida, item.precio);
-      infoBoxNormal(info);
-      info.querySelector('div:nth-child(2)').innerHTML = `<strong>${esc(item.id)}</strong> · ${esc(item.desc)} — rango ${item.min}-${item.max} ${esc(item.medida)}s · precio antes de IVA: <strong>${fmt.cop(item.precio)}</strong>`;
-    }
-  }
-
-  // Evalúa la fórmula de cantidad y actualiza el tarifario
-  function aplicarCantidad() {
-    const raw = inpCantidad.value;
-    if (raw.trim().startsWith('=')) {
-      const result = evaluarCantidad(raw);
-      if (result !== null) inpCantidad.value = result;
-    }
-    const cantNum = Number(inpCantidad.value) || 0;
-    syncTarifABoreq(undefined, cantNum);
-    if (inp.value.trim()) selectTarifByQuantity(inp.value.trim());
-  }
-
-  inp.addEventListener('input', showResults);
-  inp.addEventListener('focus', showResults);
-
-  // Cantidad: mientras escribe actualiza el rango (si no es fórmula); al salir o Enter evalúa
-  inpCantidad.addEventListener('input', () => {
-    if (!inpCantidad.value.trim().startsWith('=') && inp.value.trim()) {
-      selectTarifByQuantity(inp.value.trim());
-    }
-  });
-  inpCantidad.addEventListener('blur', aplicarCantidad);
-  inpCantidad.addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); aplicarCantidad(); }
+    refreshM3Calc();
+  };
+  cont.addEventListener('input', handle);
+  cont.addEventListener('change', handle);
+  cont.addEventListener('click', e => {
+    const rm = e.target.closest('.item-remove');
+    if (!rm || r.items.length <= 1) return;
+    r.items.splice(Number(rm.dataset.idx), 1);
+    rerender();
   });
 
-  // Código tarifario editable: al ingresarlo completa la descripción
-  if (inpCodigo && !inpCodigo.disabled) {
-    inpCodigo.addEventListener('input', () => selectTarifByCodigo(inpCodigo.value));
-  }
-
-  document.addEventListener('click', e => {
-    if (!e.target.closest('.tarifario-search')) results.classList.remove('active');
-  });
+  const btn = document.getElementById('btnAgregarItem');
+  if (btn) btn.addEventListener('click', () => { r.items.push(nuevoItem()); rerender(); });
 }
 
 /* ============================================================
@@ -2435,6 +2420,7 @@ function getRawValueForExport(c, r) {
     cantidad: r.m2.cantidad,
     precio: r.m3.precio,
     subtotal: r.m3.subtotal,
+    administracion: r.m3.administracion || 0,
     tarifaImp: r.m3.tarifaImp,
     valorImp: r.m3.valorImp,
     totalEjec: r.m3.totalEjec,
