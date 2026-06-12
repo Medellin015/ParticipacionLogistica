@@ -1509,6 +1509,12 @@ function renderModalContent() {
           <input type="date" class="form-input" data-field="m1.fechaElab" value="${esc(r.m1.fechaElab)}" ${dis}>
         </div>
         <div class="form-group">
+          <label class="form-label">Tipo de recurso <span class="required">*</span> <span class="hint">(ORD / PP)</span></label>
+          <select class="form-select" data-field="m3.tipoRec" ${dis}>
+            ${CATALOGOS.tiposRecurso.map(tr => `<option ${tr === r.m3.tipoRec ? 'selected' : ''}>${esc(tr)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
           <label class="form-label">OP (asignado automáticamente)</label>
           <input type="text" class="form-input mono" value="${esc(r.op)}" disabled>
         </div>
@@ -1709,10 +1715,8 @@ function renderModalContent() {
           <input type="text" class="form-input mono" data-field="m3.idInterno" value="${esc(r.m3.idInterno || '')}" placeholder="Ej: P-2026-0001" ${dis}>
         </div>
         <div class="form-group">
-          <label class="form-label">Tipo de recurso <span class="hint">(Col AZ)</span></label>
-          <select class="form-select" data-field="m3.tipoRec" ${dis}>
-            ${CATALOGOS.tiposRecurso.map(tr => `<option ${tr === r.m3.tipoRec ? 'selected' : ''}>${esc(tr)}</option>`).join('')}
-          </select>
+          <label class="form-label">Tipo de recurso <span class="hint">(Col AZ · definido en M1)</span></label>
+          <input type="text" class="form-input mono" value="${esc(r.m3.tipoRec || 'ORD')}" disabled>
         </div>
         <div class="form-group">
           <label class="form-label">Estado del requerimiento <span class="hint">(Col AT)</span></label>
