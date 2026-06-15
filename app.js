@@ -339,6 +339,17 @@ const COLUMNAS_DETALLE = [
   { id: 'estadoRev',       col: 'BN', m: 'REV', label: 'Estado Revisión',            def: false,              acc: r => esc(r.revision?.estadoRev || '—') }
 ];
 
+// Letra de columna de Excel a partir del índice 0-based (0→A, 26→AA, …)
+function colLetter(n) {
+  let s = '';
+  n += 1;
+  while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); }
+  return s;
+}
+// Reasigna la letra de cada columna según su posición real (evita desfases al
+// insertar columnas nuevas como "Administración").
+COLUMNAS_DETALLE.forEach((c, i) => { c.col = colLetter(i); });
+
 /* ============================================================
    ESTADO GLOBAL
    ============================================================ */
@@ -413,25 +424,59 @@ async function loadRequerimientos() {
   return REQUERIMIENTOS;
 }
 
-// Genera un OP tentativo (en producción esto lo hará una Cloud Function con contador atómico)
-function generarOP(req) {
-  const seq = (REQUERIMIENTOS.reduce((m, r) => Math.max(m, r.opSeq || 0), 0)) + 1;
+// Suscripción en tiempo real: refleja cambios de otros usuarios sin recargar.
+// No re-renderiza mientras haya un modal abierto, para no interrumpir la edición.
+let unsubRequerimientos = null;
+function suscribirRequerimientos() {
+  if (unsubRequerimientos || !window.fb || !window.fb.ready) return;
+  const fb = window.fb;
+  unsubRequerimientos = fb.onSnapshot(fb.collection(fb.db, COL_REQUERIMIENTOS), snap => {
+    REQUERIMIENTOS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    REQUERIMIENTOS.forEach(r => recalcularReq(r));
+    REQUERIMIENTOS.sort((a, b) => (a.opSeq || 0) - (b.opSeq || 0) || String(a.op).localeCompare(String(b.op)));
+    const modalAbierto = document.getElementById('modal')?.classList.contains('active');
+    if (state.role && !modalAbierto && !state.cargando) render();
+  }, err => console.error('onSnapshot requerimientos:', err));
+}
+function desuscribirRequerimientos() {
+  if (unsubRequerimientos) { unsubRequerimientos(); unsubRequerimientos = null; }
+}
+
+// Construye el string de OP a partir de un secuencial
+function construirOP(req, seq) {
   const subsecMap = { 'FORMACIÓN': 'FORM', 'ORSO': 'ORSO', 'PL Y PP': 'PLYPP', 'DESPACHO': 'DESPACHO', 'SPC': 'SPC' };
   const subAbbr = subsecMap[req.m1?.subsec] || 'GEN';
   const tipo = req.m3?.tipoRec || 'ORD';
-  return { op: `${seq}_${subAbbr}_${tipo}`, opSeq: seq };
+  return `${seq}_${subAbbr}_${tipo}`;
 }
 
-// Crea un requerimiento nuevo en Firestore
+// OP tentativo solo para vista previa en la UI (el definitivo lo asigna la transacción)
+function generarOP(req) {
+  const seq = (REQUERIMIENTOS.reduce((m, r) => Math.max(m, r.opSeq || 0), 0)) + 1;
+  return { op: construirOP(req, seq), opSeq: seq };
+}
+
+// Crea un requerimiento nuevo en Firestore asignando el secuencial de forma
+// ATÓMICA mediante una transacción sobre contadores/requerimientos, para que
+// dos usuarios simultáneos no obtengan el mismo OP.
 async function crearRequerimientoFirestore(req) {
   const fb = await esperarFirebase();
-  const { op, opSeq } = generarOP(req);
-  const payload = limpiarParaFirestore({ ...req, op, opSeq });
-  delete payload.id; // Firestore asigna el id del documento
-  payload._creadoEn = fb.serverTimestamp();
-  payload._actualizadoEn = fb.serverTimestamp();
-  const ref = await fb.addDoc(fb.collection(fb.db, COL_REQUERIMIENTOS), payload);
-  return ref.id;
+  const counterRef = fb.doc(fb.db, 'contadores', 'requerimientos');
+  const newRef = fb.doc(fb.collection(fb.db, COL_REQUERIMIENTOS)); // id autogenerado
+  await fb.runTransaction(fb.db, async (tx) => {
+    const snap = await tx.get(counterRef);
+    const actual = snap.exists() ? (snap.data().seq || 0) : 0;
+    // Arranca desde el máximo conocido para no chocar con datos ya sembrados
+    const maxLocal = REQUERIMIENTOS.reduce((m, r) => Math.max(m, r.opSeq || 0), 0);
+    const seq = Math.max(actual, maxLocal) + 1;
+    const payload = limpiarParaFirestore({ ...req, op: construirOP(req, seq), opSeq: seq });
+    delete payload.id;
+    payload._creadoEn = fb.serverTimestamp();
+    payload._actualizadoEn = fb.serverTimestamp();
+    tx.set(counterRef, { seq }, { merge: true });
+    tx.set(newRef, payload);
+  });
+  return newRef.id;
 }
 
 // Actualiza un requerimiento existente en Firestore
@@ -520,29 +565,6 @@ function showToast(msg, kind = 'success') {
 /* ============================================================
    CÁLCULOS FINANCIEROS (compartible con backend)
    ============================================================ */
-
-function recalcular(precio, cantidad, tarifaImp) {
-  const subtotal = (precio || 0) * (cantidad || 0);
-  const valorImp = subtotal * (tarifaImp || 0);
-  const totalEjec = subtotal + valorImp;
-  const honorarios = totalEjec * 0.095;
-  const ivaHon = honorarios * 0.19;
-  const totalHon = honorarios + ivaHon;
-  const gmf = (totalEjec / 1000) * 4;
-  const estampilla = totalEjec * 0.02;
-  const valorEjec = totalEjec + totalHon;
-  return {
-    subtotal: Math.round(subtotal),
-    valorImp: Math.round(valorImp),
-    totalEjec: Math.round(totalEjec),
-    honorarios: Math.round(honorarios),
-    ivaHon: Math.round(ivaHon),
-    totalHon: Math.round(totalHon),
-    gmf: Math.round(gmf),
-    estampilla: Math.round(estampilla),
-    valorEjec: Math.round(valorEjec)
-  };
-}
 
 // ---- Modelo de ítems: un requerimiento puede tener varias líneas/ítems ----
 function nuevoItem() {
@@ -648,7 +670,7 @@ function renderItemCard(it, i, dis, total) {
       </div>
       <div class="form-group">
         <label class="form-label">Administración % <span class="hint">(antes del IVA)</span></label>
-        <input type="number" class="form-input mono item-admin" data-idx="${i}" min="0" max="100" step="0.1" value="${esc(Number(it.adminPct) * 100)}" placeholder="0" ${dis}>
+        <input type="number" class="form-input mono item-admin" data-idx="${i}" min="0" max="100" step="0.1" value="${esc(+(Number(it.adminPct) * 100).toFixed(4))}" placeholder="0" ${dis}>
       </div>
       <div class="form-group span-2">
         <label class="form-label">Observaciones del ítem</label>
@@ -671,19 +693,28 @@ function renderItemCard(it, i, dis, total) {
   </div>`;
 }
 
-// Panel de M3: resumen de cálculo por ítem + totales (solo lectura)
+// Panel de M3: resumen de cálculo por ítem + totales.
+// Al EDITAR (no en creación) el rol financiero puede ajustar IVA y administración
+// por ítem; en creación es solo lectura (se editan en M2).
 function renderM3CalcInner(r) {
   recalcularReq(r);
+  const m3Edit = r.id !== 'new' && canRoleEditTab('m3');
   const filas = r.items.map((it, i) => {
     const c = calcItem(it);
+    const celdaAdmin = m3Edit
+      ? `<input type="number" class="form-input mono m3-admin" data-idx="${i}" min="0" max="100" step="0.1" value="${esc(+(Number(it.adminPct) * 100).toFixed(4))}" style="width:70px;text-align:right;"> · ${fmt.cop(c.administracion)}`
+      : `${(Number(it.adminPct) * 100).toFixed(1)}% · ${fmt.cop(c.administracion)}`;
+    const celdaIva = m3Edit
+      ? `<select class="form-select m3-tarifa" data-idx="${i}" style="width:78px;">${CATALOGOS.tarifasImpuesto.map(t2 => `<option value="${t2}" ${Number(it.tarifaImp) === t2 ? 'selected' : ''}>${(t2 * 100).toFixed(0)}%</option>`).join('')}</select> · ${fmt.cop(c.valorImp)}`
+      : `${(Number(it.tarifaImp) * 100).toFixed(0)}% · ${fmt.cop(c.valorImp)}`;
     return `<tr>
       <td>${i + 1}</td>
       <td class="ic-desc">${esc(it.desc || it.tarifario || '—')}</td>
       <td>${fmt.num(it.cantidad)}</td>
       <td>${fmt.cop(it.precio)}</td>
       <td>${fmt.cop(c.subtotal)}</td>
-      <td>${(Number(it.adminPct) * 100).toFixed(1)}% · ${fmt.cop(c.administracion)}</td>
-      <td>${(Number(it.tarifaImp) * 100).toFixed(0)}% · ${fmt.cop(c.valorImp)}</td>
+      <td>${celdaAdmin}</td>
+      <td>${celdaIva}</td>
       <td>${fmt.cop(c.valorEjec)}</td>
     </tr>`;
   }).join('');
@@ -745,6 +776,7 @@ function refreshM3Calc() {
     render();  // muestra estado de carga
     try {
       await loadRequerimientos();
+      suscribirRequerimientos(); // actualizaciones en vivo de otros usuarios
     } catch (err) {
       console.error('Error cargando requerimientos:', err);
       showToast('No se pudieron cargar los datos: ' + err.message, 'error');
@@ -765,6 +797,7 @@ function applyRole() {
 
 document.getElementById('userChip').addEventListener('click', () => {
   if (!confirm('¿Cerrar sesión y volver a la pantalla de selección de rol?')) return;
+  desuscribirRequerimientos();
   state.role = null;
   document.getElementById('app').classList.remove('active');
   document.getElementById('loginShell').style.display = '';
@@ -1422,8 +1455,10 @@ function refreshReqTableOnly() {
 
 function openModal(reqId) {
   const isNew = !reqId;
-  const r = isNew ? newEmptyReq() : REQUERIMIENTOS.find(x => x.id === reqId);
-  if (!r) return;
+  const original = isNew ? newEmptyReq() : REQUERIMIENTOS.find(x => x.id === reqId);
+  if (!original) return;
+  // Editar sobre una COPIA: si el usuario cancela, los datos en memoria no se mutan.
+  const r = isNew ? original : JSON.parse(JSON.stringify(original));
   state.editingReq = r;
   state.activeTab = 'm1';
 
@@ -1485,10 +1520,27 @@ document.getElementById('modalDelete').addEventListener('click', async () => {
 document.getElementById('modal').addEventListener('click', e => {
   if (e.target.id === 'modal') closeModal();
 });
+// Valida los campos obligatorios mínimos de un requerimiento; devuelve lista de faltantes
+function validarReq(r) {
+  const errs = [];
+  if (!r.m1?.subsec) errs.push('Subsecretaría');
+  if (!r.m2?.evento || !String(r.m2.evento).trim()) errs.push('Nombre del evento');
+  if (!r.m2?.proyecto) errs.push('Código de proyecto');
+  const items = Array.isArray(r.items) ? r.items : [];
+  const validos = items.filter(it => Number(it.cantidad) > 0 &&
+    ((it.tarifario && String(it.tarifario).trim()) || (it.desc && String(it.desc).trim())));
+  if (!validos.length) errs.push('Al menos un ítem con cantidad y descripción/código');
+  return errs;
+}
+
 document.getElementById('modalSave').addEventListener('click', async () => {
   const r = state.editingReq;
   if (!r) return;
   const isNew = r.id === 'new';
+  if (isNew) {
+    const errs = validarReq(r);
+    if (errs.length) { showToast('Faltan campos obligatorios: ' + errs.join(' · '), 'error'); return; }
+  }
   const btn = document.getElementById('modalSave');
   const original = btn.textContent;
   btn.disabled = true;
@@ -1533,7 +1585,6 @@ function setReqPath(obj, path, value) {
     let value = el.value;
     if (el.type === 'number') value = value === '' ? null : Number(value);
     setReqPath(state.editingReq, field, value);
-    if (field === 'm3.tarifaImp') refreshM3Calc(); // recalcula al cambiar la tarifa
   };
   body.addEventListener('input', handler);
   body.addEventListener('change', handler);
@@ -1948,8 +1999,29 @@ function renderModalContent() {
   // Conectar el autocompletado del tarifario si M2 fue renderizado y es editable
   if (tabsToRender.includes('m2') && (isNew || canRoleEditTab('m2'))) attachItemsEditor();
 
+  // Conectar la edición de IVA/administración por ítem en M3 (financiero, al editar)
+  if (tabsToRender.includes('m3') && !isNew && canRoleEditTab('m3')) attachM3Editor();
+
   // Conectar la carga de Excel en modo creación
   if (isNew) attachExcelUpload();
+}
+
+// Permite al financiero ajustar IVA y administración por ítem desde M3 (al editar)
+function attachM3Editor() {
+  const panel = document.getElementById('m3CalcPanel');
+  if (!panel || !state.editingReq) return;
+  const r = state.editingReq;
+  panel.addEventListener('change', e => {
+    const el = e.target;
+    const idx = el.dataset && el.dataset.idx;
+    if (idx == null) return;
+    const it = r.items[Number(idx)];
+    if (!it) return;
+    if (el.classList.contains('m3-admin')) it.adminPct = (Number(el.value) || 0) / 100;
+    else if (el.classList.contains('m3-tarifa')) it.tarifaImp = Number(el.value) || 0;
+    else return;
+    refreshM3Calc();
+  });
 }
 
 /* ============================================================
@@ -1972,6 +2044,19 @@ function evaluarCantidad(raw) {
   } catch (e) {
     return null;
   }
+}
+
+// Parsea números tolerando separadores de miles/decimales (es-CO o en-US):
+// "3.546,45" y "3,546.45" → 3546.45. Toma el último '.' o ',' como decimal.
+function parseNumCO(v) {
+  if (typeof v === 'number') return v;
+  const s = String(v == null ? '' : v).trim().replace(/[^\d.,-]/g, '');
+  if (!s) return 0;
+  const dec = Math.max(s.lastIndexOf(','), s.lastIndexOf('.'));
+  if (dec === -1) return Number(s) || 0;
+  const ent = s.slice(0, dec).replace(/[.,]/g, '');
+  const frac = s.slice(dec + 1).replace(/[.,]/g, '');
+  return Number(`${ent}.${frac}`) || 0;
 }
 
 // Editor de ítems del requerimiento (M2). Maneja varios ítems con autocompletado
@@ -2009,7 +2094,7 @@ function attachItemsEditor() {
       it.desc = el.value;
       if (commit) { aplicarPorDesc(it); rerender(); return; }
     } else if (el.classList.contains('item-cantidad')) {
-      const n = evaluarCantidad(el.value) ?? (Number(el.value) || 0);
+      const n = String(el.value).trim().startsWith('=') ? (evaluarCantidad(el.value) ?? 0) : parseNumCO(el.value);
       it.cantidad = n;
       if (commit) { if (String(el.value).trim().startsWith('=')) el.value = n; aplicarPorDesc(it); rerender(); return; }
     } else if (el.classList.contains('item-codigo')) {
@@ -2018,7 +2103,7 @@ function attachItemsEditor() {
     } else if (el.classList.contains('item-medida')) {
       it.medida = el.value;
     } else if (el.classList.contains('item-precio')) {
-      it.precio = Number(el.value) || 0;
+      it.precio = parseNumCO(el.value);
     } else if (el.classList.contains('item-tarifa')) {
       it.tarifaImp = Number(el.value) || 0;
     } else if (el.classList.contains('item-admin')) {
@@ -2640,6 +2725,16 @@ async function parseExcelToReq(file) {
       if (colDef) camposLlenos.push(colDef.label);
     }
   });
+
+  // El Excel trae un único ítem por fila: volcamos los campos importados de
+  // m2/m3 al primer ítem para que el editor multi-ítem y los cálculos los tomen.
+  req.items = [{
+    desc: req.m2.desc || '', tarifario: req.m2.tarifario || '', medida: req.m2.medida || '',
+    cantidad: Number(req.m2.cantidad) || 0, precio: Number(req.m3.precio) || 0,
+    tarifaImp: Number(req.m3.tarifaImp) || 0.19, adminPct: Number(req.m3.adminPct) || 0,
+    obs: req.m2.obs || '', evSpc: req.m2.evSpc || 'PENDIENTE', evOper: req.m2.evOper || 'PENDIENTE'
+  }];
+  recalcularReq(req);
 
   return { req, filled, usedPositional, camposLlenos };
 }
