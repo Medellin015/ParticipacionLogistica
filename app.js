@@ -442,7 +442,28 @@ async function loadProyectos() {
   return PROYECTOS;
 }
 
-// Suscripción en tiempo real: refleja cambios de otros usuarios sin recargar.
+// Mapa { códigoProyecto: [actividades MGA] } cargado desde catalogos/mgaPorProyecto
+let MGA_POR_PROYECTO = {};
+async function loadMgaPorProyecto() {
+  try {
+    const fb = await esperarFirebase();
+    const snap = await fb.getDoc(fb.doc(fb.db, 'catalogos', 'mgaPorProyecto'));
+    if (snap.exists()) MGA_POR_PROYECTO = snap.data().mapa || {};
+  } catch (err) {
+    console.error('No se pudo cargar el mapa de MGA por proyecto:', err);
+  }
+  return MGA_POR_PROYECTO;
+}
+
+// Opciones <option> de actividad MGA para un proyecto (incluye el valor actual
+// aunque no esté en la lista, para no perder datos existentes).
+function opcionesMGA(codigoProyecto, seleccion) {
+  const lista = MGA_POR_PROYECTO[codigoProyecto] || [];
+  const todas = (seleccion && !lista.includes(seleccion)) ? [seleccion, ...lista] : lista;
+  const placeholder = lista.length ? 'Seleccionar actividad MGA…' : '(Sin MGA para este proyecto)';
+  return `<option value="">${placeholder}</option>` +
+    todas.map(m => `<option ${m === seleccion ? 'selected' : ''}>${esc(m)}</option>`).join('');
+}
 // No re-renderiza mientras haya un modal abierto, para no interrumpir la edición.
 let unsubRequerimientos = null;
 function suscribirRequerimientos() {
@@ -794,6 +815,7 @@ function refreshM3Calc() {
     render();  // muestra estado de carga
     try {
       await loadProyectos();     // catálogo de proyectos (código → nombre)
+      await loadMgaPorProyecto(); // actividades MGA por proyecto
       await loadRequerimientos();
       suscribirRequerimientos(); // actualizaciones en vivo de otros usuarios
     } catch (err) {
@@ -1769,8 +1791,10 @@ function renderModalContent() {
           </select>
         </div>
         <div class="form-group span-2">
-          <label class="form-label">Actividad MGA</label>
-          <input type="text" class="form-input" data-field="m2.mga" value="${esc(r.m2.mga)}" ${dis}>
+          <label class="form-label">Actividad MGA <span class="hint">(según el proyecto)</span></label>
+          <select class="form-select" data-field="m2.mga" id="selMGA" ${dis}>
+            ${opcionesMGA(r.m2.proyecto, r.m2.mga)}
+          </select>
         </div>
         <div class="form-group span-2">
           <label class="form-label">Actividad detallada MGA <span class="hint">(auto del catálogo)</span></label>
@@ -2025,14 +2049,20 @@ function renderModalContent() {
   if (isNew) attachExcelUpload();
 }
 
-// Al elegir el código de proyecto, muestra su nombre en vivo (campo auto)
+// Al elegir el código de proyecto: muestra su nombre y repuebla las actividades MGA
 function attachProyectoSelect() {
   const sel = document.getElementById('selProyecto');
   const nombre = document.getElementById('nombreProyAuto');
-  if (!sel || !nombre) return;
+  if (!sel) return;
   sel.addEventListener('change', () => {
     const p = PROYECTOS.find(x => x.codigo === sel.value);
-    nombre.value = p ? p.nombre : '';
+    if (nombre) nombre.value = p ? p.nombre : '';
+    // Repoblar el listado de MGA del proyecto y limpiar la selección anterior
+    const selMGA = document.getElementById('selMGA');
+    if (selMGA) {
+      selMGA.innerHTML = opcionesMGA(sel.value, '');
+      if (state.editingReq) setReqPath(state.editingReq, 'm2.mga', '');
+    }
   });
 }
 
