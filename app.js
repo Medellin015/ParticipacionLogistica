@@ -464,6 +464,36 @@ function opcionesMGA(codigoProyecto, seleccion) {
   return `<option value="">${placeholder}</option>` +
     todas.map(m => `<option ${m === seleccion ? 'selected' : ''}>${esc(m)}</option>`).join('');
 }
+
+// Mapa { códigoProyecto: [ {mga, det:[actividades detalladas]} ] }
+let DET_POR_PROYECTO = {};
+async function loadDetalladas() {
+  try {
+    const fb = await esperarFirebase();
+    const snap = await fb.getDoc(fb.doc(fb.db, 'catalogos', 'detalladasPorMga'));
+    if (snap.exists()) DET_POR_PROYECTO = snap.data().mapa || {};
+  } catch (err) {
+    console.error('No se pudo cargar el mapa de actividades detalladas:', err);
+  }
+  return DET_POR_PROYECTO;
+}
+
+// Actividades detalladas correspondientes a un (proyecto, MGA)
+function detalladasDe(codigoProyecto, mga) {
+  const arr = DET_POR_PROYECTO[codigoProyecto] || [];
+  return (arr.find(x => x.mga === mga) || {}).det || [];
+}
+
+// Opciones <option> de actividad detallada para un (proyecto, MGA)
+function opcionesDetalladas(codigoProyecto, mga, seleccion) {
+  const lista = detalladasDe(codigoProyecto, mga);
+  // Si hay una sola y no hay selección previa, se autoselecciona
+  const auto = (!seleccion && lista.length === 1) ? lista[0] : seleccion;
+  const todas = (auto && !lista.includes(auto)) ? [auto, ...lista] : lista;
+  const placeholder = lista.length ? 'Seleccionar actividad detallada…' : '(Selecciona primero una MGA)';
+  return `<option value="">${placeholder}</option>` +
+    todas.map(d => `<option ${d === auto ? 'selected' : ''}>${esc(d)}</option>`).join('');
+}
 // No re-renderiza mientras haya un modal abierto, para no interrumpir la edición.
 let unsubRequerimientos = null;
 function suscribirRequerimientos() {
@@ -816,6 +846,7 @@ function refreshM3Calc() {
     try {
       await loadProyectos();     // catálogo de proyectos (código → nombre)
       await loadMgaPorProyecto(); // actividades MGA por proyecto
+      await loadDetalladas();    // actividades detalladas por (proyecto, MGA)
       await loadRequerimientos();
       suscribirRequerimientos(); // actualizaciones en vivo de otros usuarios
     } catch (err) {
@@ -1797,8 +1828,10 @@ function renderModalContent() {
           </select>
         </div>
         <div class="form-group span-2">
-          <label class="form-label">Actividad detallada MGA <span class="hint">(auto del catálogo)</span></label>
-          <input type="text" class="form-input" data-field="m2.actDet" value="${esc(r.m2.actDet)}" disabled>
+          <label class="form-label">Actividad detallada MGA <span class="hint">(según la MGA)</span></label>
+          <select class="form-select" data-field="m2.actDet" id="selDet" ${dis}>
+            ${opcionesDetalladas(r.m2.proyecto, r.m2.mga, r.m2.actDet)}
+          </select>
         </div>
       </div>
 
@@ -2040,7 +2073,7 @@ function renderModalContent() {
   btnDelete.textContent = 'Eliminar';
 
   // Conectar el autocompletado del tarifario si M2 fue renderizado y es editable
-  if (tabsToRender.includes('m2') && (isNew || canRoleEditTab('m2'))) { attachItemsEditor(); attachProyectoSelect(); }
+  if (tabsToRender.includes('m2') && (isNew || canRoleEditTab('m2'))) { attachItemsEditor(); attachProyectoSelect(); attachMgaSelect(); }
 
   // Conectar la edición de IVA/administración por ítem en M3 (financiero, al editar)
   if (tabsToRender.includes('m3') && !isNew && canRoleEditTab('m3')) attachM3Editor();
@@ -2057,12 +2090,30 @@ function attachProyectoSelect() {
   sel.addEventListener('change', () => {
     const p = PROYECTOS.find(x => x.codigo === sel.value);
     if (nombre) nombre.value = p ? p.nombre : '';
-    // Repoblar el listado de MGA del proyecto y limpiar la selección anterior
+    // Repoblar MGA del proyecto y limpiar MGA + actividad detallada anteriores
     const selMGA = document.getElementById('selMGA');
     if (selMGA) {
       selMGA.innerHTML = opcionesMGA(sel.value, '');
       if (state.editingReq) setReqPath(state.editingReq, 'm2.mga', '');
     }
+    const selDet = document.getElementById('selDet');
+    if (selDet) {
+      selDet.innerHTML = opcionesDetalladas(sel.value, '', '');
+      if (state.editingReq) setReqPath(state.editingReq, 'm2.actDet', '');
+    }
+  });
+}
+
+// Al elegir la actividad MGA, repuebla las actividades detalladas correspondientes
+function attachMgaSelect() {
+  const selMGA = document.getElementById('selMGA');
+  const selDet = document.getElementById('selDet');
+  if (!selMGA || !selDet) return;
+  selMGA.addEventListener('change', () => {
+    const proyecto = document.getElementById('selProyecto')?.value || '';
+    selDet.innerHTML = opcionesDetalladas(proyecto, selMGA.value, '');
+    // Refleja en el modelo la selección (incluye autoselección si hay una sola)
+    if (state.editingReq) setReqPath(state.editingReq, 'm2.actDet', selDet.value);
   });
 }
 
