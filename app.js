@@ -13,7 +13,7 @@ const CATALOGOS = {
   tarifasImpuesto: [0, 0.05, 0.08, 0.16, 0.19]
 };
 
-const PROYECTOS = [
+let PROYECTOS = [
   { codigo: '240183', nombre: 'Apoyo técnico a nuevas expresiones organizativas', subsec: 'PL Y PP' },
   { codigo: '240184', nombre: 'Apoyo técnico y material a las organizaciones sociales', subsec: 'ORSO' },
   { codigo: '240185', nombre: 'Consolidación del Sistema de Servicio al Ciudadano', subsec: 'PL Y PP' },
@@ -424,6 +424,24 @@ async function loadRequerimientos() {
   return REQUERIMIENTOS;
 }
 
+// Carga el catálogo de proyectos desde Firestore (colección proyectos).
+// Reemplaza el catálogo local; si falla, se conserva el de respaldo.
+const COL_PROYECTOS = 'proyectos';
+async function loadProyectos() {
+  try {
+    const fb = await esperarFirebase();
+    const snap = await fb.getDocs(fb.collection(fb.db, COL_PROYECTOS));
+    if (snap.empty) return PROYECTOS;
+    PROYECTOS = snap.docs.map(d => {
+      const x = d.data();
+      return { codigo: x.codigo || d.id, nombre: x.nombre || '', subsec: x.dependencia || x.subsec || '' };
+    }).sort((a, b) => String(a.codigo).localeCompare(String(b.codigo)));
+  } catch (err) {
+    console.error('No se pudo cargar el catálogo de proyectos, se usa el de respaldo:', err);
+  }
+  return PROYECTOS;
+}
+
 // Suscripción en tiempo real: refleja cambios de otros usuarios sin recargar.
 // No re-renderiza mientras haya un modal abierto, para no interrumpir la edición.
 let unsubRequerimientos = null;
@@ -775,6 +793,7 @@ function refreshM3Calc() {
     state.cargando = true;
     render();  // muestra estado de carga
     try {
+      await loadProyectos();     // catálogo de proyectos (código → nombre)
       await loadRequerimientos();
       suscribirRequerimientos(); // actualizaciones en vivo de otros usuarios
     } catch (err) {
@@ -1741,7 +1760,7 @@ function renderModalContent() {
         </div>
         <div class="form-group span-2">
           <label class="form-label">Nombre proyecto <span class="hint">(auto)</span></label>
-          <input type="text" class="form-input" value="${esc(PROYECTOS.find(p => p.codigo === r.m2.proyecto)?.nombre || '')}" disabled>
+          <input type="text" class="form-input" id="nombreProyAuto" value="${esc(PROYECTOS.find(p => p.codigo === r.m2.proyecto)?.nombre || '')}" disabled>
         </div>
         <div class="form-group">
           <label class="form-label">Comuna</label>
@@ -1997,13 +2016,24 @@ function renderModalContent() {
   btnDelete.textContent = 'Eliminar';
 
   // Conectar el autocompletado del tarifario si M2 fue renderizado y es editable
-  if (tabsToRender.includes('m2') && (isNew || canRoleEditTab('m2'))) attachItemsEditor();
+  if (tabsToRender.includes('m2') && (isNew || canRoleEditTab('m2'))) { attachItemsEditor(); attachProyectoSelect(); }
 
   // Conectar la edición de IVA/administración por ítem en M3 (financiero, al editar)
   if (tabsToRender.includes('m3') && !isNew && canRoleEditTab('m3')) attachM3Editor();
 
   // Conectar la carga de Excel en modo creación
   if (isNew) attachExcelUpload();
+}
+
+// Al elegir el código de proyecto, muestra su nombre en vivo (campo auto)
+function attachProyectoSelect() {
+  const sel = document.getElementById('selProyecto');
+  const nombre = document.getElementById('nombreProyAuto');
+  if (!sel || !nombre) return;
+  sel.addEventListener('change', () => {
+    const p = PROYECTOS.find(x => x.codigo === sel.value);
+    nombre.value = p ? p.nombre : '';
+  });
 }
 
 // Permite al financiero ajustar IVA y administración por ítem desde M3 (al editar)
