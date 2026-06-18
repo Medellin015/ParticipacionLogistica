@@ -637,15 +637,18 @@ function showToast(msg, kind = 'success') {
 
 // ---- Modelo de ítems: un requerimiento puede tener varias líneas/ítems ----
 function nuevoItem() {
-  return { desc: '', tarifario: '', medida: '', cantidad: 0, precio: 0,
+  return { desc: '', tarifario: '', caracteristicas: '', medida: '', cantidad: 0, precio: 0,
            tarifaImp: 0.19, adminPct: 0, obs: '', evSpc: 'PENDIENTE', evOper: 'PENDIENTE' };
 }
 
 // Garantiza r.items[]; migra requerimientos antiguos de un solo ítem
 function migrarItems(r) {
   if (Array.isArray(r.items) && r.items.length) return r.items;
+  const cod = r.m2?.tarifario || '';
   r.items = [{
-    desc: r.m2?.desc || '', tarifario: r.m2?.tarifario || '', medida: r.m2?.medida || '',
+    desc: r.m2?.desc || '', tarifario: cod,
+    caracteristicas: (TARIFARIO.find(t => t.id === cod) || {}).carac || '',
+    medida: r.m2?.medida || '',
     cantidad: Number(r.m2?.cantidad) || 0, precio: Number(r.m3?.precio) || 0,
     tarifaImp: Number(r.m3?.tarifaImp) || 0.19, adminPct: Number(r.m3?.adminPct) || 0,
     obs: r.m2?.obs || '', evSpc: r.m2?.evSpc || 'PENDIENTE', evOper: r.m2?.evOper || 'PENDIENTE'
@@ -730,6 +733,10 @@ function renderItemCard(it, i, dis, total) {
       <div class="form-group">
         <label class="form-label">Precio unitario</label>
         <input type="text" class="form-input mono item-precio" data-idx="${i}" value="${esc(it.precio)}" placeholder="0" ${dis}>
+      </div>
+      <div class="form-group span-3">
+        <label class="form-label">Características del ítem <span class="hint">(del tarifario)</span></label>
+        <textarea class="form-textarea item-carac" data-idx="${i}" rows="2" placeholder="Se completan automáticamente al elegir el ítem del tarifario" ${dis}>${esc(it.caracteristicas || (tarif ? tarif.carac : ''))}</textarea>
       </div>
       <div class="form-group">
         <label class="form-label">Tarifa impuesto (IVA)</label>
@@ -2181,13 +2188,13 @@ function attachItemsEditor() {
     const cands = TARIFARIO.filter(t => t.desc.toLowerCase() === String(it.desc || '').toLowerCase());
     if (!cands.length) return;
     const m = cands.find(t => it.cantidad >= t.min && it.cantidad <= t.max) || cands[0];
-    it.tarifario = m.id; it.medida = m.medida; it.precio = m.precio;
+    it.tarifario = m.id; it.medida = m.medida; it.precio = m.precio; it.caracteristicas = m.carac || '';
   }
   function aplicarPorCodigo(it) {
     const m = TARIFARIO.find(t => t.id.toUpperCase() === String(it.tarifario || '').trim().toUpperCase());
     if (!m) return;
     if (!it.desc) it.desc = m.desc;
-    it.medida = m.medida; it.precio = m.precio;
+    it.medida = m.medida; it.precio = m.precio; it.caracteristicas = m.carac || '';
   }
   function rerender() {
     cont.innerHTML = r.items.map((it, i) => renderItemCard(it, i, '', r.items.length)).join('');
@@ -2213,6 +2220,8 @@ function attachItemsEditor() {
       if (commit) { aplicarPorCodigo(it); rerender(); return; }
     } else if (el.classList.contains('item-medida')) {
       it.medida = el.value;
+    } else if (el.classList.contains('item-carac')) {
+      it.caracteristicas = el.value;
     } else if (el.classList.contains('item-precio')) {
       it.precio = parseNumCO(el.value);
     } else if (el.classList.contains('item-tarifa')) {
@@ -2840,7 +2849,9 @@ async function parseExcelToReq(file) {
   // El Excel trae un único ítem por fila: volcamos los campos importados de
   // m2/m3 al primer ítem para que el editor multi-ítem y los cálculos los tomen.
   req.items = [{
-    desc: req.m2.desc || '', tarifario: req.m2.tarifario || '', medida: req.m2.medida || '',
+    desc: req.m2.desc || '', tarifario: req.m2.tarifario || '',
+    caracteristicas: (TARIFARIO.find(t => t.id === req.m2.tarifario) || {}).carac || '',
+    medida: req.m2.medida || '',
     cantidad: Number(req.m2.cantidad) || 0, precio: Number(req.m3.precio) || 0,
     tarifaImp: Number(req.m3.tarifaImp) || 0.19, adminPct: Number(req.m3.adminPct) || 0,
     obs: req.m2.obs || '', evSpc: req.m2.evSpc || 'PENDIENTE', evOper: req.m2.evOper || 'PENDIENTE'
