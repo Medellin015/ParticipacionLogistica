@@ -8,7 +8,7 @@ const CATALOGOS = {
   estadosTramite: ['En subsanación', 'En cotización', 'A ejecución', 'Cancelado', 'Suspendido', 'Sin recibir', 'Ejecutado'],
   estadosReq: ['Ejecutado', 'No ejecutado por el proveedor', 'Cancelado', 'Cancelado por incumplimiento', 'A ejecución'],
   estadosEvidencia: ['OK', 'PENDIENTE', 'EN SUBSANACIÓN', 'CANCELADO'],
-  comunas: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '50', '60', '70', '80', '90', '99', 'ORD', 'PP'],
+  comunas: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '50', '60', '70', '80', '90', '99'],
   tiposRecurso: ['ORD', 'PP'],
   tarifasImpuesto: [0, 0.05, 0.08, 0.16, 0.19]
 };
