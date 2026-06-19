@@ -1596,8 +1596,10 @@ document.getElementById('modalDelete').addEventListener('click', async () => {
     btn.textContent = original;
   }
 });
-document.getElementById('modal').addEventListener('click', e => {
-  if (e.target.id === 'modal') closeModal();
+document.getElementById('modal').addEventListener('mousedown', e => {
+  // Cerrar solo si el clic EMPIEZA directamente en el fondo (no al seleccionar
+  // texto dentro del contenido y soltar el mouse sobre el overlay).
+  if (e.target === e.currentTarget) closeModal();
 });
 // Valida los campos obligatorios mínimos de un requerimiento; devuelve lista de faltantes
 function validarReq(r) {
@@ -3365,7 +3367,10 @@ function toggleColumna(id, visible) {
 }
 
 (function initDrawer() {
-  document.getElementById('drawerBackdrop').addEventListener('click', closeColumnsDrawer);
+  document.getElementById('drawerBackdrop').addEventListener('mousedown', e => {
+    // Cerrar solo si el clic empieza en el propio fondo, no al arrastrar/seleccionar
+    if (e.target === e.currentTarget) closeColumnsDrawer();
+  });
   document.getElementById('drawerCloseBtn').addEventListener('click', closeColumnsDrawer);
   document.getElementById('drawerApplyBtn').addEventListener('click', closeColumnsDrawer);
   document.getElementById('drawerSearchInput').addEventListener('input', e => {
