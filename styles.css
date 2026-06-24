@@ -1395,6 +1395,7 @@ button {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  flex-shrink: 0;
 }
 
 .modal-title-group {
@@ -1458,6 +1459,7 @@ button {
   background: var(--color-bg);
   gap: var(--sp-1);
   overflow-x: auto;
+  flex-shrink: 0;
 }
 
 .tab-btn {
@@ -1874,6 +1876,7 @@ button {
   align-items: center;
   justify-content: space-between;
   background: var(--color-bg);
+  flex-shrink: 0;
 }
 
 .modal-footer-info {
