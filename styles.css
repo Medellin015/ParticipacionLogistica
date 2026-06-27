@@ -952,7 +952,8 @@ button {
   flex-shrink: 0;
 }
 
-.excel-upload-bar .btn-accent {
+.excel-upload-bar .btn-accent,
+.excel-upload-bar .btn-secondary {
   margin-left: 0;
   flex-shrink: 0;
 }

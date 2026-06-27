@@ -1731,7 +1731,22 @@ function renderModalContent() {
         <svg class="btn-icon" viewBox="0 0 24 24"><path d="M12 16V4m0 0L8 8m4-4l4 4M4 20h16"/></svg>
         Cargar Excel
       </button>
+      <button class="btn-secondary" id="btnDescargarReq" type="button">
+        <svg class="btn-icon" viewBox="0 0 24 24"><path d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16"/></svg>
+        Descargar
+      </button>
       <input type="file" id="excelUploadInput" accept=".xlsx,.xls" style="display:none">
+    </div>`;
+  } else {
+    html += `<div class="excel-upload-bar">
+      <div class="excel-upload-info">
+        <svg viewBox="0 0 24 24"><path d="M14 3v4a1 1 0 001 1h4M9 13l2 2 4-4"/><path d="M5 21h14a1 1 0 001-1V7l-5-4H5a1 1 0 00-1 1v16a1 1 0 001 1z"/></svg>
+        <div>Descarga toda la información de este requerimiento en Excel (campos por momento + ítems).</div>
+      </div>
+      <button class="btn-accent" id="btnDescargarReq" type="button">
+        <svg class="btn-icon" viewBox="0 0 24 24"><path d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16"/></svg>
+        Descargar Excel
+      </button>
     </div>`;
   }
 
@@ -2096,6 +2111,10 @@ function renderModalContent() {
 
   // Conectar la carga de Excel en modo creación
   if (isNew) attachExcelUpload();
+
+  // Botón "Descargar": exporta todo el requerimiento en edición a Excel
+  const btnDesc = document.getElementById('btnDescargarReq');
+  if (btnDesc) btnDesc.addEventListener('click', () => descargarRequerimientoExcel(state.editingReq));
 }
 
 // Al elegir el código de proyecto: muestra su nombre y repuebla las actividades MGA
@@ -2958,6 +2977,80 @@ async function descargarWorkbook(wb, nombreBase) {
   a.click();
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// EXPORTACIÓN: un solo requerimiento (todos sus campos + sus ítems)
+async function descargarRequerimientoExcel(r) {
+  if (!r) return;
+  if (typeof ExcelJS === 'undefined') {
+    showToast('ExcelJS no cargó. Verifica tu conexión.', 'error');
+    return;
+  }
+  recalcularReq(r); // asegura items[] y totales actualizados
+  showToast('Generando Excel...', 'success');
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Matriz Operación Logística · SPC Medellín';
+  wb.created = new Date();
+
+  // Hoja 1: campos del requerimiento (vertical: Campo · Valor)
+  const ws = wb.addWorksheet('Requerimiento');
+  ws.columns = [{ width: 34 }, { width: 72 }];
+  ws.getCell('A1').value = `Requerimiento ${r.op || '(nuevo)'}`;
+  ws.getCell('A1').font = { bold: true, size: 14, color: { argb: XL.accent }, name: 'Calibri' };
+  ws.mergeCells('A1:B1');
+  ws.getCell('A2').value = r.m2?.evento || '';
+  ws.getCell('A2').font = { italic: true, size: 11, color: { argb: XL.textSec }, name: 'Calibri' };
+  ws.mergeCells('A2:B2');
+
+  let fila = 4;
+  ws.getCell(`A${fila}`).value = 'Campo';
+  ws.getCell(`B${fila}`).value = 'Valor';
+  styleHeaderRow(ws.getRow(fila));
+  fila++;
+  COLUMNAS_DETALLE.forEach(c => {
+    const v = getRawValueForExport(c, r);
+    const cellA = ws.getCell(`A${fila}`);
+    const cellB = ws.getCell(`B${fila}`);
+    cellA.value = c.label;
+    cellA.font = { bold: true, size: 10, name: 'Calibri', color: { argb: XL.accent } };
+    cellA.alignment = { vertical: 'top', wrapText: true };
+    if (v !== null && v !== undefined) cellB.value = v;
+    const f = getCellFormat(c);
+    if (f.numFmt) cellB.numFmt = f.numFmt;
+    cellB.alignment = { horizontal: f.align === 'right' ? 'right' : 'left', vertical: 'top', wrapText: true };
+    cellB.font = { name: f.font || 'Calibri', size: 10 };
+    fila++;
+  });
+
+  // Hoja 2: ítems del requerimiento (uno por fila, con cálculo)
+  const wi = wb.addWorksheet('Ítems');
+  const heads = ['#', 'Descripción', 'Código', 'Características', 'Unidad', 'Cantidad',
+    'Precio unitario', 'Tarifa IVA', 'Administración %', 'Subtotal', 'Administración',
+    'IVA', 'Total ejecutable', 'Honorarios', 'GMF', 'Estampilla', 'Valor ejecutado',
+    'Observaciones', 'Evidencia SPC', 'Evidencia Operador'];
+  wi.getRow(1).values = heads;
+  styleHeaderRow(wi.getRow(1));
+  (r.items || []).forEach((it, i) => {
+    const cc = calcItem(it);
+    wi.getRow(i + 2).values = [
+      i + 1, it.desc || '', it.tarifario || '', it.caracteristicas || '', it.medida || '',
+      Number(it.cantidad) || 0, Number(it.precio) || 0, Number(it.tarifaImp) || 0, Number(it.adminPct) || 0,
+      cc.subtotal, cc.administracion, cc.valorImp, cc.totalEjec, cc.honorarios, cc.gmf, cc.estampilla, cc.valorEjec,
+      it.obs || '', it.evSpc || '', it.evOper || ''
+    ];
+  });
+  // Formatos de columna
+  [7, 10, 11, 12, 13, 14, 15, 16, 17].forEach(ci => wi.getColumn(ci).numFmt = '"$"#,##0');
+  wi.getColumn(6).numFmt = '#,##0';   // cantidad
+  wi.getColumn(8).numFmt = '0%';      // tarifa IVA (fracción)
+  wi.getColumn(9).numFmt = '0.0%';    // administración (fracción)
+  const anchos = [4, 34, 12, 42, 12, 10, 15, 9, 14, 15, 15, 14, 16, 15, 12, 14, 16, 32, 14, 16];
+  wi.columns.forEach((col, i) => { col.width = anchos[i] || 16; });
+
+  const nombre = `requerimiento_${String(r.op || 'nuevo').replace(/[^\w-]+/g, '_')}`;
+  await descargarWorkbook(wb, nombre);
+  showToast('Requerimiento descargado', 'success');
 }
 
 // EXPORTACIÓN: Requerimientos (66 columnas)
