@@ -753,8 +753,11 @@ function renderItemCard(it, i, dis, total) {
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label">Administración % <span class="hint">(antes del IVA)</span></label>
-        <input type="number" class="form-input mono item-admin" data-idx="${i}" min="0" max="100" step="0.1" value="${esc(+(Number(it.adminPct) * 100).toFixed(4))}" placeholder="0" ${dis}>
+        <label class="form-label">Administración (%) <span class="hint">(antes del IVA)</span></label>
+        <div class="input-suffix-wrap">
+          <input type="number" class="form-input mono item-admin" data-idx="${i}" min="0" max="100" step="0.1" value="${esc(+(Number(it.adminPct) * 100).toFixed(4))}" placeholder="0" ${dis}>
+          <span class="input-suffix">%</span>
+        </div>
       </div>
       <div class="form-group span-2">
         <label class="form-label">Observaciones del ítem</label>

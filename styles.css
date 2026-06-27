@@ -958,6 +958,26 @@ button {
   flex-shrink: 0;
 }
 
+/* Campo numérico con sufijo de unidad (ej. %) */
+.input-suffix-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-suffix-wrap .form-input {
+  padding-right: 26px;
+}
+
+.input-suffix {
+  position: absolute;
+  right: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  pointer-events: none;
+}
+
 /* Charts */
 .dash-grid {
   display: grid;
