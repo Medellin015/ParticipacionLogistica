@@ -279,7 +279,7 @@ const COLUMNAS_DETALLE = [
   { id: 'mga',             col: 'N',  m: 'M2', label: 'Actividad MGA',               def: false, trunc: 200,  acc: r => esc(r.m2.mga) },
   { id: 'actDet',          col: 'O',  m: 'M2', label: 'Actividad Detallada MGA',     def: false, trunc: 240,  acc: r => esc(r.m2.actDet) },
   // === ID interno (Tercer momento — Financiero) ===
-  { id: 'idInterno',       col: 'P',  m: 'M3', label: 'ID financiero',               def: false, mono: true,  acc: r => esc(r.m3.idInterno || '—') },
+  { id: 'idInterno',       col: 'P',  m: 'M3', label: 'ID financiero',               def: false, mono: true,  acc: r => esc((r.m3.idInterno || '—').replace(/\n/g, ' / ')) },
   // === Segundo momento — Logístico (Q-AB) ===
   { id: 'lugar',           col: 'Q',  m: 'M2', label: 'Lugar del Evento',            def: false, trunc: 200,  acc: r => esc(r.m2.lugar) },
   { id: 'fechaEntrega',    col: 'R',  m: 'M2', label: 'Fecha Entrega',               def: true,               acc: r => fmt.fecha(r.m2.fechaEntrega) },
@@ -501,7 +501,13 @@ function detalladasDe(codigoProyecto, mga) {
 // construye desde los escalares antiguos (representante) con monto 0 (sin distribuir).
 function migrarProyectos(r) {
   r.m2 = r.m2 || {};
-  if (Array.isArray(r.m2.proyectos) && r.m2.proyectos.length) return r.m2.proyectos;
+  // Se considera que la lista tiene contenido si algún proyecto trae datos. Una lista por
+  // defecto con una sola entrada vacía (la que crea newEmptyReq) NO cuenta: en ese caso se
+  // rehidrata desde los escalares m2.proyecto/mga/actDet — necesario para que la importación
+  // de Excel (que escribe los escalares) no se pierda al sincronizar el representante.
+  const tieneContenido = Array.isArray(r.m2.proyectos) &&
+    r.m2.proyectos.some(p => p && (p.proyecto || p.mga || p.actDet || Number(p.monto)));
+  if (tieneContenido) return r.m2.proyectos;
   r.m2.proyectos = [{
     proyecto: r.m2.proyecto || '', mga: r.m2.mga || '', actDet: r.m2.actDet || '', monto: 0
   }];
