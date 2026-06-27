@@ -496,12 +496,28 @@ function detalladasDe(codigoProyecto, mga) {
   return (arr.find(x => x.mga === mga) || {}).det || [];
 }
 
-// ID financiero = Proyecto · código MGA · descripción de actividad detallada
+// Garantiza la lista r.m2.proyectos (varios proyectos/fuentes de financiación).
+// Mismo patrón que migrarItems: si ya existe la lista, no toca nada; si no, la
+// construye desde los escalares antiguos (representante) con monto 0 (sin distribuir).
+function migrarProyectos(r) {
+  r.m2 = r.m2 || {};
+  if (Array.isArray(r.m2.proyectos) && r.m2.proyectos.length) return r.m2.proyectos;
+  r.m2.proyectos = [{
+    proyecto: r.m2.proyecto || '', mga: r.m2.mga || '', actDet: r.m2.actDet || '', monto: 0
+  }];
+  return r.m2.proyectos;
+}
+
+// ID financiero = un ID por cada proyecto ("Proyecto · código MGA · actividad detallada"),
+// unidos con salto de línea para que la celda muestre la lista completa.
 function componerIdFinanciero(r) {
-  const proyecto = r.m2?.proyecto || '';
-  const codMga = (String(r.m2?.mga || '').match(/^[\d.]+/) || [''])[0].replace(/\.+$/, '').trim();
-  const actDet = r.m2?.actDet || '';
-  return [proyecto, codMga, actDet].filter(Boolean).join(' · ');
+  const proys = (Array.isArray(r.m2?.proyectos) && r.m2.proyectos.length)
+    ? r.m2.proyectos
+    : [{ proyecto: r.m2?.proyecto || '', mga: r.m2?.mga || '', actDet: r.m2?.actDet || '' }];
+  return proys.map(p => {
+    const codMga = (String(p.mga || '').match(/^[\d.]+/) || [''])[0].replace(/\.+$/, '').trim();
+    return [p.proyecto || '', codMga, p.actDet || ''].filter(Boolean).join(' · ');
+  }).filter(Boolean).join('\n');
 }
 
 // Actualiza el ID financiero (modelo + campo visible) tras cambiar proyecto/MGA/actividad
@@ -522,6 +538,46 @@ function opcionesDetalladas(codigoProyecto, mga, seleccion) {
   const placeholder = lista.length ? 'Seleccionar actividad detallada…' : '(Selecciona primero una MGA)';
   return `<option value="">${placeholder}</option>` +
     todas.map(d => `<option ${d === auto ? 'selected' : ''}>${esc(d)}</option>`).join('');
+}
+
+// Tarjeta editable de un proyecto/fuente de financiación (usada en M2). Cada tarjeta
+// lleva su proyecto, MGA, actividad detallada y el monto imputado (distribución).
+// totalValor = r.m3.valorEjec, usado para mostrar el % que representa el monto.
+function renderProyectoCard(p, i, dis, total, totalValor) {
+  const nombre = PROYECTOS.find(x => x.codigo === p.proyecto)?.nombre || '';
+  const pct = (totalValor > 0) ? (Number(p.monto || 0) / totalValor * 100).toFixed(1) + '%' : '—';
+  return `
+  <div class="item-card" data-pidx="${i}">
+    <div class="item-card-head">
+      <span class="item-card-title">Proyecto ${i + 1}</span>
+      ${(!dis && total > 1) ? `<button type="button" class="proyecto-remove" data-pidx="${i}" title="Eliminar proyecto">✕ Quitar</button>` : ''}
+    </div>
+    <div class="form-grid cols-3">
+      <div class="form-group">
+        <label class="form-label">Código proyecto <span class="required">*</span></label>
+        <select class="form-select proy-codigo" data-pidx="${i}" ${dis}>
+          <option value="">Seleccionar...</option>
+          ${PROYECTOS.map(x => `<option value="${esc(x.codigo)}" ${x.codigo === p.proyecto ? 'selected' : ''}>${esc(x.codigo)} — ${esc(x.nombre)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group span-2">
+        <label class="form-label">Nombre proyecto <span class="hint">(auto)</span></label>
+        <input type="text" class="form-input proy-nombre" data-pidx="${i}" value="${esc(nombre)}" disabled>
+      </div>
+      <div class="form-group span-2">
+        <label class="form-label">Actividad MGA <span class="hint">(según el proyecto)</span></label>
+        <select class="form-select proy-mga" data-pidx="${i}" ${dis}>${opcionesMGA(p.proyecto, p.mga)}</select>
+      </div>
+      <div class="form-group span-3">
+        <label class="form-label">Actividad detallada MGA <span class="hint">(según la MGA)</span></label>
+        <select class="form-select proy-actdet" data-pidx="${i}" ${dis}>${opcionesDetalladas(p.proyecto, p.mga, p.actDet)}</select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Monto imputado <span class="hint">(pesos · ${pct} del total)</span></label>
+        <input type="text" class="form-input mono proy-monto" data-pidx="${i}" value="${esc(p.monto || 0)}" placeholder="0" ${dis}>
+      </div>
+    </div>
+  </div>`;
 }
 // No re-renderiza mientras haya un modal abierto, para no interrumpir la edición.
 let unsubRequerimientos = null;
@@ -734,6 +790,11 @@ function recalcularReq(r) {
   // Garantiza los objetos de mapa antes de usarlos (docs sin m1/m2/m3 por edición
   // manual, import parcial o esquema viejo), igual que migrarItems garantiza r.items.
   r.m1 = r.m1 || {}; r.m2 = r.m2 || {}; r.m3 = r.m3 || {};
+  // Garantiza la lista de proyectos y sincroniza el representante (proyectos[0])
+  // hacia los escalares antiguos, que siguen alimentando tabla/dashboard/exportación.
+  migrarProyectos(r);
+  const p0 = r.m2.proyectos[0] || {};
+  r.m2.proyecto = p0.proyecto || ''; r.m2.mga = p0.mga || ''; r.m2.actDet = p0.actDet || '';
   const claves = ['subtotal','administracion','valorImp','totalEjec','honorarios','ivaHon','totalHon','gmf','estampilla','valorEjec'];
   const tot = Object.fromEntries(claves.map(k => [k, 0]));
   let cantidadTotal = 0;
@@ -1606,7 +1667,9 @@ function newEmptyReq() {
   return {
     id: 'new', op: '—', opSeq: REQUERIMIENTOS.length + 1,
     m1: { subsec: '', enlace: '', fechaElab: new Date().toISOString().substring(0,10) },
-    m2: { evento: '', proyecto: '', comuna: '', mga: '', actDet: '', fechaEntrega: '', lugar: '', persona: '', contacto: '',
+    m2: { evento: '', proyecto: '', comuna: '', mga: '', actDet: '',
+          proyectos: [{ proyecto: '', mga: '', actDet: '', monto: 0 }],
+          fechaEntrega: '', lugar: '', persona: '', contacto: '',
           tarifario: '', desc: '', medida: '', cantidad: 0, obs: '', evSpc: 'PENDIENTE', evOper: 'PENDIENTE' },
     m3: { precio: 0, subtotal: 0, administracion: 0, tarifaImp: 0.19, valorImp: 0, totalEjec: 0, honorarios: 0, ivaHon: 0, totalHon: 0, gmf: 0, estampilla: 0, valorEjec: 0,
           proveedor: '', nit: '', factura: '', estadoReq: 'A ejecución', conciliacion: 'PENDIENTE', tipoRec: 'ORD' },
@@ -1653,7 +1716,9 @@ function validarReq(r) {
   const errs = [];
   if (!r.m1?.subsec) errs.push('Subsecretaría');
   if (!r.m2?.evento || !String(r.m2.evento).trim()) errs.push('Nombre del evento');
-  if (!r.m2?.proyecto) errs.push('Código de proyecto');
+  // Requiere al menos un proyecto con código (la distribución de montos es informativa, no bloquea)
+  const proys = Array.isArray(r.m2?.proyectos) ? r.m2.proyectos : [];
+  if (!proys.some(p => p.proyecto && String(p.proyecto).trim()) && !r.m2?.proyecto) errs.push('Al menos un código de proyecto');
   const items = Array.isArray(r.items) ? r.items : [];
   const validos = items.filter(it => Number(it.cantidad) > 0 &&
     ((it.tarifario && String(it.tarifario).trim()) || (it.desc && String(it.desc).trim())));
@@ -1876,34 +1941,27 @@ function renderModalContent() {
           <input type="text" class="form-input" data-field="m2.instancia" value="${esc(r.m2.instancia || '')}" placeholder="Ej: Mesa Comunitaria, JAL, Organización beneficiaria..." ${dis}>
         </div>
         <div class="form-group">
-          <label class="form-label">Código proyecto <span class="required">*</span></label>
-          <select class="form-select" data-field="m2.proyecto" ${dis} id="selProyecto">
-            <option value="">Seleccionar...</option>
-            ${PROYECTOS.map(p => `<option value="${esc(p.codigo)}" ${p.codigo === r.m2.proyecto ? 'selected' : ''}>${esc(p.codigo)} — ${esc(p.nombre)}</option>`).join('')}
-          </select>
-        </div>
-        <div class="form-group span-2">
-          <label class="form-label">Nombre proyecto <span class="hint">(auto)</span></label>
-          <input type="text" class="form-input" id="nombreProyAuto" value="${esc(PROYECTOS.find(p => p.codigo === r.m2.proyecto)?.nombre || '')}" disabled>
-        </div>
-        <div class="form-group">
           <label class="form-label">Comuna</label>
           <select class="form-select" data-field="m2.comuna" ${dis}>
             ${CATALOGOS.comunas.map(c => `<option ${c === r.m2.comuna ? 'selected' : ''}>${esc(c)}</option>`).join('')}
           </select>
         </div>
-        <div class="form-group span-2">
-          <label class="form-label">Actividad MGA <span class="hint">(según el proyecto)</span></label>
-          <select class="form-select" data-field="m2.mga" id="selMGA" ${dis}>
-            ${opcionesMGA(r.m2.proyecto, r.m2.mga)}
-          </select>
-        </div>
-        <div class="form-group span-2">
-          <label class="form-label">Actividad detallada MGA <span class="hint">(según la MGA)</span></label>
-          <select class="form-select" data-field="m2.actDet" id="selDet" ${dis}>
-            ${opcionesDetalladas(r.m2.proyecto, r.m2.mga, r.m2.actDet)}
-          </select>
-        </div>
+      </div>
+
+      <div class="section-divider">
+        <div class="section-divider-title">Proyectos / fuentes de financiación</div>
+        <div class="section-divider-sub">Cada proyecto lleva su actividad MGA, su actividad detallada y el monto imputado (distribución del valor del requerimiento). El ID financiero se compone con un identificador por proyecto.</div>
+      </div>
+
+      <div id="proyectosContainer">
+        ${(migrarProyectos(r)).map((p, i) => renderProyectoCard(p, i, dis, r.m2.proyectos.length, r.m3.valorEjec)).join('')}
+      </div>
+      ${dis ? '' : `<button type="button" class="btn-secondary" id="btnAgregarProyecto" style="margin-top:8px;">+ Agregar proyecto</button>`}
+      <div id="distIndicador" class="dist-indicador" style="margin-top:10px;"></div>
+
+      <div class="form-group" style="margin-top:12px;">
+        <label class="form-label">ID financiero <span class="hint">(auto · uno por proyecto: Proyecto · cód. MGA · actividad detallada)</span></label>
+        <textarea class="form-input mono" id="idFinancieroAuto" rows="3" readonly>${esc(componerIdFinanciero(r))}</textarea>
       </div>
 
       <div class="section-divider">
@@ -1991,8 +2049,8 @@ function renderModalContent() {
 
       <div class="form-grid cols-3">
         <div class="form-group span-3">
-          <label class="form-label">ID financiero <span class="hint">(auto: Proyecto · cód. MGA · actividad detallada)</span></label>
-          <input type="text" class="form-input mono" id="idFinancieroAuto" value="${esc(componerIdFinanciero(r))}" disabled>
+          <label class="form-label">ID financiero <span class="hint">(auto: uno por proyecto · Proyecto · cód. MGA · actividad detallada)</span></label>
+          <textarea class="form-input mono" id="idFinancieroAutoM3" rows="3" disabled>${esc(componerIdFinanciero(r))}</textarea>
         </div>
         <div class="form-group">
           <label class="form-label">Tipo de recurso <span class="hint">(Col AZ · definido en M1)</span></label>
@@ -2156,7 +2214,7 @@ function renderModalContent() {
   btnDelete.textContent = 'Eliminar';
 
   // Conectar el autocompletado del tarifario si M2 fue renderizado y es editable
-  if (tabsToRender.includes('m2') && (isNew || canRoleEditTab('m2'))) { attachItemsEditor(); attachProyectoSelect(); attachMgaSelect(); }
+  if (tabsToRender.includes('m2') && (isNew || canRoleEditTab('m2'))) { attachItemsEditor(); attachProyectosEditor(); }
 
   // Conectar la edición de IVA/administración por ítem en M3 (financiero, al editar)
   if (tabsToRender.includes('m3') && !isNew && canRoleEditTab('m3')) attachM3Editor();
@@ -2169,43 +2227,88 @@ function renderModalContent() {
   if (btnDesc) btnDesc.addEventListener('click', () => descargarRequerimientoExcel(state.editingReq));
 }
 
-// Al elegir el código de proyecto: muestra su nombre y repuebla las actividades MGA
-function attachProyectoSelect() {
-  const sel = document.getElementById('selProyecto');
-  const nombre = document.getElementById('nombreProyAuto');
-  if (!sel) return;
-  sel.addEventListener('change', () => {
-    const p = PROYECTOS.find(x => x.codigo === sel.value);
-    if (nombre) nombre.value = p ? p.nombre : '';
-    // Repoblar MGA del proyecto y limpiar MGA + actividad detallada anteriores
-    const selMGA = document.getElementById('selMGA');
-    if (selMGA) {
-      selMGA.innerHTML = opcionesMGA(sel.value, '');
-      if (state.editingReq) setReqPath(state.editingReq, 'm2.mga', '');
-    }
-    const selDet = document.getElementById('selDet');
-    if (selDet) {
-      selDet.innerHTML = opcionesDetalladas(sel.value, '', '');
-      if (state.editingReq) setReqPath(state.editingReq, 'm2.actDet', '');
-    }
-    refreshIdFinanciero();
-  });
-}
+// Editor repetible de proyectos/fuentes de financiación (M2). Maneja varios
+// proyectos, cada uno con su MGA, actividad detallada y monto imputado; agregar/
+// quitar, repoblar selects dependientes y recomponer el ID financiero en vivo.
+// Mismo patrón que attachItemsEditor().
+function attachProyectosEditor() {
+  const cont = document.getElementById('proyectosContainer');
+  if (!cont || !state.editingReq) return;
+  const r = state.editingReq;
+  migrarProyectos(r); // garantiza la lista por si acaso
 
-// Al elegir la actividad MGA, repuebla las actividades detalladas correspondientes
-function attachMgaSelect() {
-  const selMGA = document.getElementById('selMGA');
-  const selDet = document.getElementById('selDet');
-  if (!selMGA || !selDet) return;
-  selMGA.addEventListener('change', () => {
-    const proyecto = document.getElementById('selProyecto')?.value || '';
-    selDet.innerHTML = opcionesDetalladas(proyecto, selMGA.value, '');
-    // Refleja en el modelo la selección (incluye autoselección si hay una sola)
-    if (state.editingReq) setReqPath(state.editingReq, 'm2.actDet', selDet.value);
+  // Suma de montos vs valor del requerimiento; aviso suave si no cuadra.
+  function actualizarDistribucion() {
+    const ind = document.getElementById('distIndicador');
+    if (!ind) return;
+    const total = r.m3.valorEjec || 0;
+    const sumado = r.m2.proyectos.reduce((s, p) => s + (Number(p.monto) || 0), 0);
+    const falta = total - sumado;
+    if (total > 0 && Math.abs(falta) < 1) {
+      ind.textContent = `✓ Distribución cuadra: ${fmt.cop(sumado)} de ${fmt.cop(total)}`;
+      ind.classList.remove('warn');
+    } else {
+      const detalle = falta >= 0 ? `faltan ${fmt.cop(falta)}` : `exceso ${fmt.cop(-falta)}`;
+      ind.textContent = `Distribuido ${fmt.cop(sumado)} de ${fmt.cop(total)} (total) · ${detalle}`;
+      ind.classList.add('warn');
+    }
+  }
+
+  function rerender() {
+    cont.innerHTML = r.m2.proyectos.map((p, i) => renderProyectoCard(p, i, '', r.m2.proyectos.length, r.m3.valorEjec)).join('');
+    actualizarDistribucion();
     refreshIdFinanciero();
+  }
+
+  const handle = e => {
+    const el = e.target;
+    const idx = el.dataset && el.dataset.pidx;
+    if (idx == null) return;
+    const p = r.m2.proyectos[Number(idx)];
+    if (!p) return;
+    if (el.classList.contains('proy-codigo') && e.type === 'change') {
+      // Nuevo proyecto: se limpian MGA y actividad detallada (dependientes)
+      p.proyecto = el.value; p.mga = ''; p.actDet = '';
+      rerender(); // repuebla MGA/actDet y el nombre auto
+      return;
+    } else if (el.classList.contains('proy-mga') && e.type === 'change') {
+      p.mga = el.value;
+      // Autoselección de actividad detallada si hay una sola vía opcionesDetalladas
+      const selDet = cont.querySelector(`.proy-actdet[data-pidx="${idx}"]`);
+      if (selDet) {
+        selDet.innerHTML = opcionesDetalladas(p.proyecto, p.mga, '');
+        p.actDet = selDet.value;
+      } else {
+        p.actDet = '';
+      }
+      refreshIdFinanciero();
+      return;
+    } else if (el.classList.contains('proy-actdet') && e.type === 'change') {
+      p.actDet = el.value;
+      refreshIdFinanciero();
+      return;
+    } else if (el.classList.contains('proy-monto')) {
+      p.monto = parseNumCO(el.value);
+      actualizarDistribucion(); // no hace falta rerender completo
+      return;
+    }
+  };
+  cont.addEventListener('input', handle);
+  cont.addEventListener('change', handle);
+  cont.addEventListener('click', e => {
+    const rm = e.target.closest('.proyecto-remove');
+    if (!rm || r.m2.proyectos.length <= 1) return;
+    r.m2.proyectos.splice(Number(rm.dataset.pidx), 1);
+    rerender();
   });
-  // Al cambiar la actividad detallada, recomponer el ID financiero
-  if (selDet) selDet.addEventListener('change', refreshIdFinanciero);
+
+  const btn = document.getElementById('btnAgregarProyecto');
+  if (btn) btn.addEventListener('click', () => {
+    r.m2.proyectos.push({ proyecto: '', mga: '', actDet: '', monto: 0 });
+    rerender();
+  });
+
+  actualizarDistribucion();
 }
 
 // Permite al financiero ajustar IVA y administración por ítem desde M3 (al editar)
