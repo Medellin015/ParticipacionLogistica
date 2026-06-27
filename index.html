@@ -214,11 +214,12 @@
 
   <div class="drawer-actions">
     <button class="drawer-quick-btn" data-preset="default">Por defecto (9)</button>
-    <button class="drawer-quick-btn" data-preset="all">Mostrar todas (66)</button>
+    <button class="drawer-quick-btn" data-preset="all" id="drawerPresetAll">Mostrar todas</button>
     <button class="drawer-quick-btn" data-preset="none">Ninguna</button>
     <button class="drawer-quick-btn" data-preset="M1">Solo M1</button>
     <button class="drawer-quick-btn" data-preset="M2">Solo M2</button>
     <button class="drawer-quick-btn" data-preset="M3">Solo M3</button>
+    <button class="drawer-quick-btn" data-preset="CONT">Solo Contratista</button>
     <button class="drawer-quick-btn" data-preset="REV">Solo Revisión</button>
   </div>
 
@@ -229,7 +230,7 @@
   <div class="drawer-body" id="drawerBody"></div>
 
   <div class="drawer-footer">
-    <div class="drawer-counter"><strong id="drawerCount">0</strong> de <strong>66</strong> columnas visibles</div>
+    <div class="drawer-counter"><strong id="drawerCount">0</strong> de <strong id="drawerTotal">0</strong> columnas visibles</div>
     <button class="btn-primary" style="width: auto; padding: 6px 16px; font-size: 12.5px;" id="drawerApplyBtn">Hecho</button>
   </div>
 </aside>

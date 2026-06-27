@@ -240,7 +240,7 @@ const AUDITORIA = [
 ];
 
 /* ============================================================
-   COLUMNAS DE DETALLE EJECUCIÓN — las 66 columnas reales del Excel
+   COLUMNAS DE DETALLE EJECUCIÓN — las 67 columnas reales del Excel
    con accesor para renderizado dinámico en la tabla
    ============================================================ */
 
@@ -300,7 +300,7 @@ const COLUMNAS_DETALLE = [
   { id: 'tarifaImp',       col: 'AE', m: 'M3', label: 'Tarifa Impto',                def: false, num: true,   acc: r => fmt.pct(r.m3.tarifaImp) },
   { id: 'valorImp',        col: 'AF', m: 'M3', label: 'Valor Impto',                 def: false, num: true,   acc: r => fmt.cop(r.m3.valorImp) },
   { id: 'totalEjec',       col: 'AG', m: 'M3', label: 'Total ejec. c/Impto',         def: false, num: true,   acc: r => fmt.cop(r.m3.totalEjec) },
-  { id: 'pctHon',          col: 'AH', m: 'M3', label: '% Honorarios',                def: false, num: true,   acc: r => fmt.cop(r.m3.honorarios) },
+  { id: 'pctHon',          col: 'AH', m: 'M3', label: 'Honorarios',                  def: false, num: true,   acc: r => fmt.cop(r.m3.honorarios) },
   { id: 'ivaHon',          col: 'AI', m: 'M3', label: 'IVA honorarios',              def: false, num: true,   acc: r => fmt.cop(r.m3.ivaHon) },
   { id: 'totalHon',        col: 'AJ', m: 'M3', label: 'TOTAL HONORARIOS',            def: false, num: true,   acc: r => fmt.cop(r.m3.totalHon) },
   { id: 'gmf',             col: 'AK', m: 'M3', label: 'GMF 4×1000',                  def: false, num: true,   acc: r => fmt.cop(r.m3.gmf) },
@@ -425,8 +425,12 @@ async function loadRequerimientos() {
   const fb = await esperarFirebase();
   const snap = await fb.getDocs(fb.collection(fb.db, COL_REQUERIMIENTOS));
   REQUERIMIENTOS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  // Migrar requerimientos antiguos (un ítem) al modelo de items[] y refrescar totales
-  REQUERIMIENTOS.forEach(r => recalcularReq(r));
+  // Migrar requerimientos antiguos (un ítem) al modelo de items[] y refrescar totales.
+  // Un doc corrupto se omite (warn) sin abortar la carga del resto.
+  REQUERIMIENTOS.forEach(r => {
+    try { recalcularReq(r); }
+    catch (e) { console.warn('Requerimiento omitido por error al recalcular:', r.id, e); }
+  });
   // Orden estable por opSeq si existe, luego por OP
   REQUERIMIENTOS.sort((a, b) => (a.opSeq || 0) - (b.opSeq || 0) || String(a.op).localeCompare(String(b.op)));
   return REQUERIMIENTOS;
@@ -526,7 +530,11 @@ function suscribirRequerimientos() {
   const fb = window.fb;
   unsubRequerimientos = fb.onSnapshot(fb.collection(fb.db, COL_REQUERIMIENTOS), snap => {
     REQUERIMIENTOS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    REQUERIMIENTOS.forEach(r => recalcularReq(r));
+    // Un doc corrupto se omite (warn) sin abortar el refresco del resto.
+    REQUERIMIENTOS.forEach(r => {
+      try { recalcularReq(r); }
+      catch (e) { console.warn('Requerimiento omitido por error al recalcular:', r.id, e); }
+    });
     REQUERIMIENTOS.sort((a, b) => (a.opSeq || 0) - (b.opSeq || 0) || String(a.op).localeCompare(String(b.op)));
     const modalAbierto = document.getElementById('modal')?.classList.contains('active');
     if (state.role && !modalAbierto && !state.cargando) render();
@@ -648,6 +656,22 @@ function estadoClase(estado) {
   return map[estado] || 'suspendido';
 }
 
+// Paleta de colores por estado de trámite (compartida por el donut y la leyenda del dashboard).
+// Cubre los 7 estados de CATALOGOS.estadosTramite; 'Suspendido' y 'Sin recibir' usan tonos
+// distintos para que el anillo del donut cierre 360° y la leyenda muestre todos los estados.
+const COLORES_ESTADO_TRAMITE = {
+  'Ejecutado': '#2d6a4f',
+  'A ejecución': '#a8842d',
+  'En cotización': '#2c4870',
+  'En subsanación': '#b07b15',
+  'Cancelado': '#9a2a2a',
+  'Suspendido': '#6b7280',
+  'Sin recibir': '#9aa0a6'
+};
+function colorEstadoTramite(estado) {
+  return COLORES_ESTADO_TRAMITE[estado] || '#9aa0a6';
+}
+
 function showToast(msg, kind = 'success') {
   const t = document.getElementById('toast');
   document.getElementById('toastMsg').textContent = msg;
@@ -707,6 +731,9 @@ function calcItem(it) {
 // para que tabla, dashboard y exportación sigan funcionando con los agregados.
 function recalcularReq(r) {
   migrarItems(r);
+  // Garantiza los objetos de mapa antes de usarlos (docs sin m1/m2/m3 por edición
+  // manual, import parcial o esquema viejo), igual que migrarItems garantiza r.items.
+  r.m1 = r.m1 || {}; r.m2 = r.m2 || {}; r.m3 = r.m3 || {};
   const claves = ['subtotal','administracion','valorImp','totalEjec','honorarios','ivaHon','totalHon','gmf','estampilla','valorEjec'];
   const tot = Object.fromEntries(claves.map(k => [k, 0]));
   let cantidadTotal = 0;
@@ -1032,13 +1059,15 @@ const DIM_LABEL = {
 };
 
 function getDimValue(r, dim) {
+  // Fallbacks defensivos: un doc sin m1/m2/m3 no debe reventar el dashboard;
+  // devolvemos un valor neutro ('—') cuando falte la dimensión.
   switch (dim) {
-    case 'subsec':        return r.m1.subsec;
-    case 'proyecto':      return r.m2.proyecto;
-    case 'mga':           return r.m2.mga;
-    case 'comuna':        return r.m2.comuna;
-    case 'tipoRec':       return r.m3.tipoRec;
-    case 'estadoTramite': return r.estadoTramite;
+    case 'subsec':        return r.m1?.subsec ?? '—';
+    case 'proyecto':      return r.m2?.proyecto ?? '—';
+    case 'mga':           return r.m2?.mga ?? '—';
+    case 'comuna':        return r.m2?.comuna ?? '—';
+    case 'tipoRec':       return r.m3?.tipoRec ?? '—';
+    case 'estadoTramite': return r.estadoTramite ?? '—';
   }
 }
 
@@ -1129,7 +1158,9 @@ function renderDashboard() {
   // Datos para el donut y la leyenda (estados de trámite)
   const datosEstados = datosPara('estadoTramite');
   const estadosCounts = {};
-  ['Ejecutado', 'A ejecución', 'En cotización', 'En subsanación', 'Cancelado'].forEach(e => {
+  // Se generan los counts dinámicamente desde el catálogo (7 estados) para que el
+  // donut/leyenda incluyan 'Suspendido' y 'Sin recibir' y el centro cuadre con los segmentos.
+  CATALOGOS.estadosTramite.forEach(e => {
     estadosCounts[e] = datosEstados.filter(r => r.estadoTramite === e).length;
   });
 
@@ -1218,14 +1249,9 @@ function renderDashboard() {
           </div>
         </div>
         <div class="legend">
-          ${[
-            { label: 'Ejecutado', color: '#2d6a4f' },
-            { label: 'A ejecución', color: '#a8842d' },
-            { label: 'En cotización', color: '#2c4870' },
-            { label: 'En subsanación', color: '#b07b15' },
-            { label: 'Cancelado', color: '#9a2a2a' }
-          ].map(x => ({ ...x, n: estadosCounts[x.label] || 0 }))
-           .filter(x => x.n > 0).map(x => {
+          ${CATALOGOS.estadosTramite
+            .map(label => ({ label, color: colorEstadoTramite(label), n: estadosCounts[label] || 0 }))
+            .filter(x => x.n > 0).map(x => {
             const cls = !cf || cf.dim !== 'estadoTramite' ? 'clickable'
                        : cf.value === x.label ? 'clickable legend-selected'
                        : 'clickable legend-dimmed';
@@ -1341,25 +1367,16 @@ function renderDashboard() {
 function renderDonut(dataset) {
   const arr = dataset || REQUERIMIENTOS;
   const total = arr.length || 1;
-  const counts = {
-    'Ejecutado': arr.filter(r=>r.estadoTramite==='Ejecutado').length,
-    'A ejecución': arr.filter(r=>r.estadoTramite==='A ejecución').length,
-    'En cotización': arr.filter(r=>r.estadoTramite==='En cotización').length,
-    'En subsanación': arr.filter(r=>r.estadoTramite==='En subsanación').length,
-    'Cancelado': arr.filter(r=>r.estadoTramite==='Cancelado').length
-  };
-  const colors = {
-    'Ejecutado': '#2d6a4f',
-    'A ejecución': '#a8842d',
-    'En cotización': '#2c4870',
-    'En subsanación': '#b07b15',
-    'Cancelado': '#9a2a2a'
-  };
+  // Counts dinámicos sobre los 7 estados del catálogo para que el anillo cierre 360°.
+  const counts = {};
+  CATALOGOS.estadosTramite.forEach(e => {
+    counts[e] = arr.filter(r => r.estadoTramite === e).length;
+  });
   const circ = 2 * Math.PI * 70;
   let offset = 0;
   const segments = Object.entries(counts).filter(([, n]) => n > 0).map(([label, n]) => {
     const len = (n / total) * circ;
-    const seg = `<circle r="70" cx="90" cy="90" fill="none" stroke="${colors[label]}" stroke-width="18"
+    const seg = `<circle r="70" cx="90" cy="90" fill="none" stroke="${colorEstadoTramite(label)}" stroke-width="18"
                   stroke-dasharray="${len} ${circ}" stroke-dashoffset="${-offset}" />`;
     offset += len;
     return seg;
@@ -1648,11 +1665,10 @@ document.getElementById('modalSave').addEventListener('click', async () => {
   const r = state.editingReq;
   if (!r) return;
   const isNew = r.id === 'new';
+  // Validación única antes de decidir crear/actualizar: aplica tanto al crear como al editar
+  const errs = validarReq(r);
+  if (errs.length) { showToast('Faltan campos obligatorios: ' + errs.join(' · '), 'error'); return; }
   r.m3.idInterno = componerIdFinanciero(r); // ID financiero al día antes de guardar
-  if (isNew) {
-    const errs = validarReq(r);
-    if (errs.length) { showToast('Faltan campos obligatorios: ' + errs.join(' · '), 'error'); return; }
-  }
   const btn = document.getElementById('modalSave');
   const original = btn.textContent;
   btn.disabled = true;
@@ -1742,7 +1758,7 @@ function renderModalContent() {
   if (isNew) {
     html += `<div class="form-banner" style="background: var(--color-gold-soft); border-color: var(--color-gold); color: var(--color-gold);">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
-      <div><strong>Creación de requerimiento — vista completa.</strong> Las 5 secciones (66 columnas) están disponibles. Diligencia los campos que ya conoces; los que correspondan a otros momentos pueden quedar vacíos y los completarán los roles responsables (financiero, contratista, revisión) en su fase del proceso.</div>
+      <div><strong>Creación de requerimiento — vista completa.</strong> Las 5 secciones (${COLUMNAS_DETALLE.length} columnas) están disponibles. Diligencia los campos que ya conoces; los que correspondan a otros momentos pueden quedar vacíos y los completarán los roles responsables (financiero, contratista, revisión) en su fase del proceso.</div>
     </div>`;
 
     html += `<div class="excel-upload-bar">
@@ -2069,11 +2085,23 @@ function renderModalContent() {
   }
 
   if (t === 'revision') {
+    // Modelo de datos de Revisión: claves PLANAS en r.revision (opPdf, correoOp, ...),
+    // coherentes con los accesores de columnas (r.revision?.opPdf ...) y la exportación a Excel,
+    // que ya leen este esquema. Cada input/textarea/select usa data-field para que el binding
+    // (initModalBinding -> setReqPath) persista el valor y se prellena con el valor actual.
     const docs = [
-      'OP PDF', 'Correo OP', 'Cotización 1', 'Cotización 2', 'Cotización 3',
-      'Gestión solicitud de cotización', 'Justificación selección proveedor',
-      'Correo verificación cotizaciones', 'Soporte respuesta proveedores',
-      'Informe Plaza', 'Lista de chequeo', 'Correo verificación informe'
+      { key: 'opPdf', label: 'OP PDF' },
+      { key: 'correoOp', label: 'Correo OP' },
+      { key: 'cotiz1', label: 'Cotización 1' },
+      { key: 'cotiz2', label: 'Cotización 2' },
+      { key: 'cotiz3', label: 'Cotización 3' },
+      { key: 'gestSolCotiz', label: 'Gestión solicitud de cotización' },
+      { key: 'justifSeleccProv', label: 'Justificación selección proveedor' },
+      { key: 'correoVerifCotiz', label: 'Correo verificación cotizaciones' },
+      { key: 'soporteRespProv', label: 'Soporte respuesta proveedores' },
+      { key: 'informePlaza', label: 'Informe Plaza' },
+      { key: 'listaChequeo', label: 'Lista de chequeo' },
+      { key: 'correoVerifInf', label: 'Correo verificación informe' }
     ];
     html += `
       <div class="form-banner">
@@ -2083,9 +2111,9 @@ function renderModalContent() {
       <div class="form-grid">
         ${docs.map(d => `
           <div class="form-group">
-            <label class="form-label">${esc(d)}</label>
+            <label class="form-label">${esc(d.label)}</label>
             <div style="display: flex; gap: 8px;">
-              <input type="text" class="form-input mono" placeholder="URL del archivo..." style="flex: 1;" ${dis}>
+              <input type="text" class="form-input mono" placeholder="URL del archivo..." style="flex: 1;" data-field="revision.${d.key}" value="${esc(r.revision?.[d.key] || '')}" ${dis}>
               <button class="btn-secondary" ${!canEdit ? 'disabled' : ''} style="padding: 9px 12px;">
                 <svg class="btn-icon" viewBox="0 0 24 24"><path d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16"/></svg>
               </button>
@@ -2094,12 +2122,13 @@ function renderModalContent() {
         `).join('')}
         <div class="form-group span-2">
           <label class="form-label">Observaciones de revisión</label>
-          <textarea class="form-textarea" ${dis}></textarea>
+          <textarea class="form-textarea" data-field="revision.obsRev" ${dis}>${esc(r.revision?.obsRev || '')}</textarea>
         </div>
         <div class="form-group">
           <label class="form-label">Estado revisión</label>
-          <select class="form-select" ${dis}>
-            ${CATALOGOS.estadosEvidencia.map(e => `<option>${esc(e)}</option>`).join('')}
+          <select class="form-select" data-field="revision.estadoRev" ${dis}>
+            <option value="">Seleccionar…</option>
+            ${CATALOGOS.estadosEvidencia.map(e => `<option ${e === (r.revision?.estadoRev || '') ? 'selected' : ''}>${esc(e)}</option>`).join('')}
           </select>
         </div>
       </div>
@@ -2219,17 +2248,23 @@ function evaluarCantidad(raw) {
   }
 }
 
-// Parsea números tolerando separadores de miles/decimales (es-CO o en-US):
-// "3.546,45" y "3,546.45" → 3546.45. Toma el último '.' o ',' como decimal.
+// Parsea números con convención es-CO (español de Colombia):
+//  - La COMA es el separador DECIMAL y el PUNTO es separador de MILES.
+//  - Si hay coma: se quitan todos los puntos (miles) y la coma pasa a punto decimal.
+//    Ej: "1.500.000,45" -> 1500000.45
+//  - Si NO hay coma: los puntos son SIEMPRE separadores de miles (no decimales),
+//    porque en es-CO los precios/cantidades no llevan centavos con punto.
+//    Ej: "15.000" -> 15000, "1.500.000" -> 1500000, "15000" -> 15000.
 function parseNumCO(v) {
   if (typeof v === 'number') return v;
   const s = String(v == null ? '' : v).trim().replace(/[^\d.,-]/g, '');
   if (!s) return 0;
-  const dec = Math.max(s.lastIndexOf(','), s.lastIndexOf('.'));
-  if (dec === -1) return Number(s) || 0;
-  const ent = s.slice(0, dec).replace(/[.,]/g, '');
-  const frac = s.slice(dec + 1).replace(/[.,]/g, '');
-  return Number(`${ent}.${frac}`) || 0;
+  if (s.indexOf(',') !== -1) {
+    // La coma es decimal; los puntos son miles.
+    return Number(s.replace(/\./g, '').replace(',', '.')) || 0;
+  }
+  // Sin coma: los puntos son separadores de miles.
+  return Number(s.replace(/\./g, '')) || 0;
 }
 
 // Editor de ítems del requerimiento (M2). Maneja varios ítems con autocompletado
@@ -2412,13 +2447,16 @@ function attachTarifario() {
   const inp = document.getElementById('tarifarioSearchInput');
   if (inp) {
     inp.addEventListener('input', e => {
+      // Capturar la posición del cursor antes del re-render para no saltar al final
+      const caretPos = e.target.selectionStart;
       state.tarifarioFilter = e.target.value;
       render();
-      // Restaurar foco y posición del cursor tras el re-render
+      // Restaurar foco y posición del cursor tras el re-render (clamp a la longitud del valor)
       const newInp = document.getElementById('tarifarioSearchInput');
       if (newInp) {
         newInp.focus();
-        newInp.setSelectionRange(newInp.value.length, newInp.value.length);
+        const pos = Math.min(caretPos == null ? newInp.value.length : caretPos, newInp.value.length);
+        newInp.setSelectionRange(pos, pos);
       }
     });
   }
@@ -2531,34 +2569,49 @@ function renderReportes() {
           <div class="panel-title">Seguimiento evidencias</div>
         </div>
         ${(() => {
-          const counts = { SPC_OK: 0, SPC_PEND: 0, OPER_OK: 0, OPER_PEND: 0 };
+          // Convención de clasificación de evidencias (estadosEvidencia: OK, PENDIENTE,
+          // EN SUBSANACIÓN, CANCELADO):
+          //   - 'OK'                    -> ok
+          //   - 'PENDIENTE' / 'EN SUBSANACIÓN' -> pendiente
+          //   - 'CANCELADO'             -> se EXCLUYE (no es ok ni pendiente)
+          // Para ajustar el criterio basta con cambiar la función clasificarEv.
+          const clasificarEv = (estado) => {
+            if (estado === 'OK') return 'ok';
+            if (estado === 'CANCELADO') return 'excluido';
+            return 'pend'; // PENDIENTE y EN SUBSANACIÓN
+          };
+          const counts = { SPC_OK: 0, SPC_PEND: 0, SPC_TOT: 0, OPER_OK: 0, OPER_PEND: 0, OPER_TOT: 0 };
           REQUERIMIENTOS.forEach(r => {
-            if (r.m2.evSpc === 'OK') counts.SPC_OK++;
-            else counts.SPC_PEND++;
-            if (r.m2.evOper === 'OK') counts.OPER_OK++;
-            else counts.OPER_PEND++;
+            const cSpc = clasificarEv(r.m2.evSpc);
+            if (cSpc === 'ok') { counts.SPC_OK++; counts.SPC_TOT++; }
+            else if (cSpc === 'pend') { counts.SPC_PEND++; counts.SPC_TOT++; }
+            const cOper = clasificarEv(r.m2.evOper);
+            if (cOper === 'ok') { counts.OPER_OK++; counts.OPER_TOT++; }
+            else if (cOper === 'pend') { counts.OPER_PEND++; counts.OPER_TOT++; }
           });
+          // Denominador por dimensión = ok + pendiente (excluye CANCELADO) para que las barras sean coherentes.
+          const pct = (n, tot) => (tot ? (n / tot * 100) : 0).toFixed(0);
           return `
             <div class="bar-chart">
               <div class="bar-row">
                 <div class="bar-label">SPC · OK</div>
-                <div class="bar-track"><div class="bar-fill" style="width: ${(counts.SPC_OK/REQUERIMIENTOS.length*100).toFixed(0)}%"></div></div>
-                <div class="bar-value">${counts.SPC_OK} / ${REQUERIMIENTOS.length}</div>
+                <div class="bar-track"><div class="bar-fill" style="width: ${pct(counts.SPC_OK, counts.SPC_TOT)}%"></div></div>
+                <div class="bar-value">${counts.SPC_OK} / ${counts.SPC_TOT}</div>
               </div>
               <div class="bar-row">
                 <div class="bar-label">SPC · Pendiente</div>
-                <div class="bar-track"><div class="bar-fill gold" style="width: ${(counts.SPC_PEND/REQUERIMIENTOS.length*100).toFixed(0)}%"></div></div>
-                <div class="bar-value">${counts.SPC_PEND} / ${REQUERIMIENTOS.length}</div>
+                <div class="bar-track"><div class="bar-fill gold" style="width: ${pct(counts.SPC_PEND, counts.SPC_TOT)}%"></div></div>
+                <div class="bar-value">${counts.SPC_PEND} / ${counts.SPC_TOT}</div>
               </div>
               <div class="bar-row">
                 <div class="bar-label">Operador · OK</div>
-                <div class="bar-track"><div class="bar-fill" style="width: ${(counts.OPER_OK/REQUERIMIENTOS.length*100).toFixed(0)}%"></div></div>
-                <div class="bar-value">${counts.OPER_OK} / ${REQUERIMIENTOS.length}</div>
+                <div class="bar-track"><div class="bar-fill" style="width: ${pct(counts.OPER_OK, counts.OPER_TOT)}%"></div></div>
+                <div class="bar-value">${counts.OPER_OK} / ${counts.OPER_TOT}</div>
               </div>
               <div class="bar-row">
                 <div class="bar-label">Operador · Pendiente</div>
-                <div class="bar-track"><div class="bar-fill gold" style="width: ${(counts.OPER_PEND/REQUERIMIENTOS.length*100).toFixed(0)}%"></div></div>
-                <div class="bar-value">${counts.OPER_PEND} / ${REQUERIMIENTOS.length}</div>
+                <div class="bar-track"><div class="bar-fill gold" style="width: ${pct(counts.OPER_PEND, counts.OPER_TOT)}%"></div></div>
+                <div class="bar-value">${counts.OPER_PEND} / ${counts.OPER_TOT}</div>
               </div>
             </div>
           `;
@@ -2740,7 +2793,7 @@ const COL_PATH = {
   persona: ['m2','persona'], contacto: ['m2','contacto'],
   codTarif: ['m2','tarifario'], desc: ['m2','desc'], obs: ['m2','obs'],
   medida: ['m2','medida'], cantidad: ['m2','cantidad'],
-  precio: ['m3','precio'], subtotal: ['m3','subtotal'], tarifaImp: ['m3','tarifaImp'],
+  precio: ['m3','precio'], subtotal: ['m3','subtotal'], administracion: ['m3','administracion'], tarifaImp: ['m3','tarifaImp'],
   valorImp: ['m3','valorImp'], totalEjec: ['m3','totalEjec'], pctHon: ['m3','honorarios'],
   ivaHon: ['m3','ivaHon'], totalHon: ['m3','totalHon'], gmf: ['m3','gmf'],
   estampilla: ['m3','estampilla'], valorEjec: ['m3','valorEjec'],
@@ -2816,14 +2869,43 @@ function convertExcelValue(colId, raw) {
   }
   const dateFields = ['fechaElab','fechaEntrega','fechaMontaje','fechaDesmontaje'];
   if (dateFields.includes(colId)) {
-    let d = (raw instanceof Date) ? raw : new Date(raw);
-    if (isNaN(d.getTime())) return null;
-    return d.toISOString().substring(0, 10);
+    // #7: Date real de ExcelJS → usar tal cual.
+    if (raw instanceof Date) {
+      return isNaN(raw.getTime()) ? null : raw.toISOString().substring(0, 10);
+    }
+    const s = String(raw).trim();
+    if (s === '') return null;
+    // Texto en formato dd/mm/yyyy o d/m/yyyy (también admite '-' como separador).
+    // new Date('27/06/2026') daría Invalid Date, así que se parsea explícitamente.
+    const mDMY = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (mDMY) {
+      const dia = +mDMY[1], mes = +mDMY[2], ano = +mDMY[3];
+      if (mes >= 1 && mes <= 12 && dia >= 1 && dia <= 31) {
+        return `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+      }
+      return null;
+    }
+    // ISO yyyy-mm-dd (o yyyy-mm-ddThh:mm…): conservar la parte de fecha.
+    const mISO = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (mISO) {
+      const d = new Date(s);
+      return isNaN(d.getTime()) ? null : `${mISO[1]}-${mISO[2]}-${mISO[3]}`;
+    }
+    // Último intento: dejar que el motor interprete (p. ej. textos en inglés);
+    // null solo si de verdad no es interpretable.
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d.toISOString().substring(0, 10);
   }
-  const numFields = ['cantidad','precio','subtotal','tarifaImp','valorImp','totalEjec',
+  const numFields = ['cantidad','precio','subtotal','administracion','tarifaImp','valorImp','totalEjec',
                      'pctHon','ivaHon','totalHon','gmf','estampilla','valorEjec','remDia','remMes','remAno'];
   if (numFields.includes(colId)) {
-    const n = Number(String(raw).replace(/[^0-9.\-]/g, ''));
+    // #8: un número real de ExcelJS pasa tal cual; un texto se interpreta con la
+    // convención es-CO (coma = decimal, puntos = miles cuando no hay coma) vía
+    // parseNumCO, evitando corromper miles colombianos ('1.250.000', '1.250').
+    if (typeof raw === 'number') return isNaN(raw) ? null : raw;
+    const s = String(raw).trim();
+    if (s === '') return null;
+    const n = parseNumCO(s);
     return isNaN(n) ? null : n;
   }
   const txt = String(raw).trim();
@@ -2865,6 +2947,22 @@ async function parseExcelToReq(file) {
     if (score > bestScore) { bestScore = score; headerRowIdx = r; headerMap = map; }
   }
 
+  // #9: Detectar el layout VERTICAL del export individual (descargarRequerimientoExcel),
+  // donde cada fila es "label en col A · valor en col B" (hoja "Requerimiento" con
+  // cabecera "Campo · Valor"). Si lo interpretáramos como horizontal caeríamos al
+  // mapeo posicional y crearíamos un requerimiento con valores basura mostrando éxito.
+  // Lo detectamos contando cuántos labels conocidos aparecen apilados en la columna A;
+  // si son varios y superan el mejor "score" horizontal, rechazamos limpiamente.
+  let labelsEnColA = 0;
+  const maxScanA = Math.min(ws.rowCount || 1, COLUMNAS_DETALLE.length + 8);
+  for (let r = 1; r <= maxScanA; r++) {
+    const txt = norm(cellText(ws.getRow(r).getCell(1)));
+    if (txt && (byLabel[txt] || byId[txt] || HEADER_ALIASES[txt])) labelsEnColA++;
+  }
+  if (labelsEnColA >= 5 && labelsEnColA > bestScore) {
+    throw new Error('Este Excel es el de un requerimiento individual (formato vertical); usa la plantilla horizontal DETALLE EJECUCIÓN para importar.');
+  }
+
   // Si no hubo coincidencias suficientes, mapear por posición (A→col1, B→col2, … BN)
   let usedPositional = false;
   if (bestScore < 3) {
@@ -2901,14 +2999,28 @@ async function parseExcelToReq(file) {
     }
   });
 
+  // #6: La columna exportada 'administracion' es un MONTO en pesos (no hay columna de
+  // porcentaje en la plantilla). Para que la administración sobreviva el round-trip
+  // reconstruimos el porcentaje a partir del monto y el subtotal del ítem:
+  //   adminPct = administracion / subtotal   (cuando subtotal > 0)
+  // así recalcularReq vuelve a producir el mismo monto. Si no hay subtotal/monto, 0.
+  const cantImp = Number(req.m2.cantidad) || 0;
+  const precioImp = Number(req.m3.precio) || 0;
+  const subtotalImp = (req.m3.subtotal != null && Number(req.m3.subtotal) > 0)
+    ? Number(req.m3.subtotal) : (precioImp * cantImp);
+  const adminMonto = Number(req.m3.administracion) || 0;
+  const adminPctImp = (adminMonto > 0 && subtotalImp > 0) ? (adminMonto / subtotalImp) : 0;
+
   // El Excel trae un único ítem por fila: volcamos los campos importados de
   // m2/m3 al primer ítem para que el editor multi-ítem y los cálculos los tomen.
   req.items = [{
     desc: req.m2.desc || '', tarifario: req.m2.tarifario || '',
     caracteristicas: (TARIFARIO.find(t => t.id === req.m2.tarifario) || {}).carac || '',
     medida: req.m2.medida || '',
-    cantidad: Number(req.m2.cantidad) || 0, precio: Number(req.m3.precio) || 0,
-    tarifaImp: Number(req.m3.tarifaImp) || 0.19, adminPct: Number(req.m3.adminPct) || 0,
+    cantidad: cantImp, precio: precioImp,
+    // #5: respetar un IVA 0% explícito (Number(0)||0.19 lo forzaba a 19%).
+    tarifaImp: req.m3.tarifaImp != null ? Number(req.m3.tarifaImp) : 0.19,
+    adminPct: adminPctImp,
     obs: req.m2.obs || '', evSpc: req.m2.evSpc || 'PENDIENTE', evOper: req.m2.evOper || 'PENDIENTE'
   }];
   recalcularReq(req);
@@ -2952,7 +3064,9 @@ function attachExcelUpload() {
 // Devuelve la categoría (moneda/numero/porcentaje/fecha/texto) según la columna
 function getCellFormat(c) {
   if (c.id === 'tarifaImp') return { numFmt: '0.0%', align: 'right' };
-  if (['cantidad', 'remDia', 'remMes', 'remAno'].includes(c.id)) return { numFmt: '#,##0', align: 'right' };
+  // El año no debe llevar separador de miles (2026, no "2,026")
+  if (c.id === 'remAno') return { numFmt: '0', align: 'right' };
+  if (['cantidad', 'remDia', 'remMes'].includes(c.id)) return { numFmt: '#,##0', align: 'right' };
   if (c.num) return { numFmt: '"$"#,##0', align: 'right' };
   if (['fechaElab', 'fechaEntrega', 'fechaMontaje', 'fechaDesmontaje'].includes(c.id)) return { numFmt: 'dd/mm/yyyy', align: 'center' };
   if (c.mono) return { font: 'Consolas', align: 'left' };
@@ -3080,7 +3194,7 @@ async function descargarRequerimientoExcel(r) {
   showToast('Requerimiento descargado', 'success');
 }
 
-// EXPORTACIÓN: Requerimientos (66 columnas)
+// EXPORTACIÓN: Requerimientos (67 columnas)
 async function exportRequerimientosExcel() {
   if (typeof ExcelJS === 'undefined') {
     showToast('ExcelJS no cargó. Verifica tu conexión.', 'error');
@@ -3161,7 +3275,7 @@ async function exportRequerimientosExcel() {
     ['Total requerimientos', REQUERIMIENTOS.length],
     ['Total columnas', COLUMNAS_DETALLE.length],
     ['', ''],
-    ['Hoja DETALLE EJECUCIÓN', 'Replica las 66 columnas (A–BN) del archivo MATRIZ original']
+    ['Hoja DETALLE EJECUCIÓN', `Replica las ${COLUMNAS_DETALLE.length} columnas (A–${colLetter(COLUMNAS_DETALLE.length - 1)}) del archivo MATRIZ original`]
   ];
   metadatos.forEach((row, i) => {
     const r = meta.getRow(i + 3);
@@ -3458,14 +3572,14 @@ function renderColumnsDrawer() {
   body.querySelectorAll('[data-toggle-group]').forEach(el => {
     el.addEventListener('click', () => {
       const m = el.dataset.toggleGroup;
-      const cols = COLUMNAS_DETALLE.filter(c => c.m === m);
-      const allVisible = cols.every(c => state.columnasVisibles.includes(c.id));
+      // #10: respetar el filtro de búsqueda activo, igual que el render del grupo.
+      // El handler opera solo sobre el subconjunto filtrado que el usuario ve.
+      const cols = (grouped[m] || []);
+      const allVisible = cols.length > 0 && cols.every(c => state.columnasVisibles.includes(c.id));
       if (allVisible) {
-        // quitar todas las de ese momento, preservando orden de las demás
-        state.columnasVisibles = state.columnasVisibles.filter(id => {
-          const c = COLUMNAS_DETALLE.find(x => x.id === id);
-          return c && c.m !== m;
-        });
+        // quitar solo las columnas filtradas de ese momento, preservando el resto (#10)
+        const setQuitar = new Set(cols.map(c => c.id));
+        state.columnasVisibles = state.columnasVisibles.filter(id => !setQuitar.has(id));
       } else {
         // agregar las que falten, manteniendo orden del array maestro
         const setVis = new Set(state.columnasVisibles);
@@ -3494,6 +3608,13 @@ function toggleColumna(id, visible) {
 }
 
 (function initDrawer() {
+  // #16: escribir el total de columnas dinámicamente (evita "66" / "BN" hardcodeados)
+  const totalCols = COLUMNAS_DETALLE.length;
+  const presetAllBtn = document.getElementById('drawerPresetAll');
+  if (presetAllBtn) presetAllBtn.textContent = `Mostrar todas (${totalCols})`;
+  const drawerTotalEl = document.getElementById('drawerTotal');
+  if (drawerTotalEl) drawerTotalEl.textContent = totalCols;
+
   document.getElementById('drawerBackdrop').addEventListener('mousedown', e => {
     // Cerrar solo si el clic empieza en el propio fondo, no al arrastrar/seleccionar
     if (e.target === e.currentTarget) closeColumnsDrawer();
