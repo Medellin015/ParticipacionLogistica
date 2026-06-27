@@ -1881,6 +1881,13 @@ button {
   min-width: 160px;
 }
 
+.items-calc-table td.ic-cod,
+.items-calc-table th.ic-cod {
+  text-align: left;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+}
+
 .items-calc-table tbody tr:last-child td {
   border-bottom: none;
 }
