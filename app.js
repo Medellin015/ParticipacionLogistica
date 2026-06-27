@@ -10,7 +10,8 @@ const CATALOGOS = {
   estadosEvidencia: ['OK', 'PENDIENTE', 'EN SUBSANACIÓN', 'CANCELADO'],
   comunas: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '50', '60', '70', '80', '90', '99'],
   tiposRecurso: ['ORD', 'PP'],
-  tarifasImpuesto: [0, 0.05, 0.08, 0.16, 0.19]
+  tarifasImpuesto: [0, 0.05, 0.08, 0.16, 0.19],
+  meses: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 };
 
 let PROYECTOS = [
@@ -370,13 +371,20 @@ const state = {
 };
 state.columnasVisibles = COLUMNAS_DETALLE.filter(c => c.def).map(c => c.id);
 
+const TODOS_TABS = ['m1', 'm2', 'm3', 'contratista', 'revision'];
 const ROLE_INFO = {
-  logistico:   { name: 'Daniel M.',    initials: 'DM', label: 'Logístico',    canEdit: ['m1', 'm2'] },
-  financiero:  { name: 'Catalina R.',  initials: 'CR', label: 'Financiero',   canEdit: ['m3'] },
-  contratista: { name: 'Hugo S.',      initials: 'HS', label: 'Contratista',  canEdit: ['contratista'] },
-  revision:    { name: 'Carlos H.',    initials: 'CH', label: 'Revisión',     canEdit: ['revision'] },
-  admin:       { name: 'Admin',        initials: 'AD', label: 'Admin',        canEdit: ['m1', 'm2', 'm3', 'contratista', 'revision'] }
+  logistico1:  { name: 'Logístico 1',       initials: 'L1', label: 'Logístico 1',  canEdit: ['m1'] },
+  logistico2:  { name: 'Juan José Pérez',   initials: 'JP', label: 'Logístico 2',  canEdit: TODOS_TABS },
+  financiero:  { name: 'Financiero',        initials: 'FN', label: 'Financiero',   canEdit: TODOS_TABS },
+  coordinacion:{ name: 'Coordinación',      initials: 'CO', label: 'Coordinación', canEdit: [] },
+  contratista: { name: 'Metro Parques',     initials: 'MP', label: 'Contratista',  canEdit: ['contratista'] },
+  revision:    { name: 'Revisión',          initials: 'RV', label: 'Revisión',     canEdit: [] }
 };
+// Roles con permisos totales (crear, eliminar, editar todo)
+const ROLES_TOTALES = ['logistico2', 'financiero'];
+// Roles con acceso a la vista de Auditoría (supervisión)
+const ROLES_AUDITORIA = ['logistico2', 'financiero', 'coordinacion'];
+
 
 /* ============================================================
    CAPA DE ACCESO A FIRESTORE
@@ -871,7 +879,7 @@ function applyRole() {
   document.getElementById('userAvatar').textContent = info.initials;
   document.getElementById('userName').textContent = info.name;
   document.getElementById('userRoleBadge').textContent = info.label;
-  document.getElementById('navAuditoria').style.display = state.role === 'admin' ? '' : 'none';
+  document.getElementById('navAuditoria').style.display = ROLES_AUDITORIA.includes(state.role) ? '' : 'none';
 }
 
 document.getElementById('userChip').addEventListener('click', () => {
@@ -942,7 +950,7 @@ function render() {
 }
 
 function renderEmptyState() {
-  const puedeCrear = ['logistico', 'admin'].includes(state.role);
+  const puedeCrear = ROLES_TOTALES.includes(state.role);
   return `
     <div class="page-header">
       <h1>Resumen ejecutivo</h1>
@@ -1387,7 +1395,7 @@ function getFilteredReqs() {
 
 function renderRequerimientos() {
   const reqs = getFilteredReqs();
-  const canCreate = ['logistico', 'admin'].includes(state.role);
+  const canCreate = ROLES_TOTALES.includes(state.role);
 
   return `
     <div class="page-header">
@@ -2008,16 +2016,15 @@ function renderModalContent() {
     html += `
       <div class="form-banner">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
-        <div>Esta sección la diligencia exclusivamente el contratista — formato de presentación 462.</div>
+        <div>Sección exclusiva del contratista (Metro Parques) — Presentación 462. Solo indica el mes; no se requiere adjuntar archivos.</div>
       </div>
       <div class="form-grid">
         <div class="form-group">
-          <label class="form-label">Presentación 462 (numérico)</label>
-          <input type="number" class="form-input mono" data-field="contratista.pres462" value="${esc(r.contratista?.pres462 || '')}" placeholder="—" ${dis}>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Fecha de presentación</label>
-          <input type="date" class="form-input" data-field="contratista.fechaPres" value="${esc(r.contratista?.fechaPres || '')}" ${dis}>
+          <label class="form-label">Mes de presentación (Form. 462) <span class="required">*</span></label>
+          <select class="form-select" data-field="contratista.pres462" ${dis}>
+            <option value="">Seleccionar mes…</option>
+            ${CATALOGOS.meses.map(m => `<option ${m === (r.contratista?.pres462 || '') ? 'selected' : ''}>${esc(m)}</option>`).join('')}
+          </select>
         </div>
       </div>
     `;
@@ -2075,7 +2082,7 @@ function renderModalContent() {
   document.getElementById('modalSave').textContent = isNew ? 'Crear requerimiento' : 'Guardar cambios';
 
   // Eliminar: disponible solo al editar un requerimiento existente (roles gestores)
-  const puedeEliminar = !isNew && ['logistico', 'admin'].includes(state.role);
+  const puedeEliminar = !isNew && ROLES_TOTALES.includes(state.role);
   const btnDelete = document.getElementById('modalDelete');
   btnDelete.style.display = puedeEliminar ? '' : 'none';
   btnDelete.disabled = false;
