@@ -814,7 +814,8 @@ function renderM3CalcInner(r) {
       : `${(Number(it.tarifaImp) * 100).toFixed(0)}% · ${fmt.cop(c.valorImp)}`;
     return `<tr>
       <td>${i + 1}</td>
-      <td class="ic-desc">${esc(it.desc || it.tarifario || '—')}</td>
+      <td class="ic-cod">${esc(it.tarifario || '—')}</td>
+      <td class="ic-desc">${esc(it.desc || '—')}</td>
       <td>${fmt.num(it.cantidad)}</td>
       <td>${fmt.cop(it.precio)}</td>
       <td>${fmt.cop(c.subtotal)}</td>
@@ -827,7 +828,7 @@ function renderM3CalcInner(r) {
       <div class="items-calc-wrap">
         <table class="items-calc-table">
           <thead><tr>
-            <th>#</th><th class="ic-desc">Ítem</th><th>Cant.</th><th>Precio/u</th>
+            <th>#</th><th class="ic-cod">Código</th><th class="ic-desc">Descripción</th><th>Cant.</th><th>Precio/u</th>
             <th>Subtotal</th><th>Administración</th><th>IVA</th><th>Valor ejec.</th>
           </tr></thead>
           <tbody>${filas}</tbody>
