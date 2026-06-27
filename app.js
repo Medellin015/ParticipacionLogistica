@@ -279,7 +279,7 @@ const COLUMNAS_DETALLE = [
   { id: 'mga',             col: 'N',  m: 'M2', label: 'Actividad MGA',               def: false, trunc: 200,  acc: r => esc(r.m2.mga) },
   { id: 'actDet',          col: 'O',  m: 'M2', label: 'Actividad Detallada MGA',     def: false, trunc: 240,  acc: r => esc(r.m2.actDet) },
   // === ID interno (Tercer momento — Financiero) ===
-  { id: 'idInterno',       col: 'P',  m: 'M3', label: 'ID interno',                  def: false, mono: true,  acc: r => esc(r.m3.idInterno || '—') },
+  { id: 'idInterno',       col: 'P',  m: 'M3', label: 'ID financiero',               def: false, mono: true,  acc: r => esc(r.m3.idInterno || '—') },
   // === Segundo momento — Logístico (Q-AB) ===
   { id: 'lugar',           col: 'Q',  m: 'M2', label: 'Lugar del Evento',            def: false, trunc: 200,  acc: r => esc(r.m2.lugar) },
   { id: 'fechaEntrega',    col: 'R',  m: 'M2', label: 'Fecha Entrega',               def: true,               acc: r => fmt.fecha(r.m2.fechaEntrega) },
@@ -490,6 +490,23 @@ async function loadDetalladas() {
 function detalladasDe(codigoProyecto, mga) {
   const arr = DET_POR_PROYECTO[codigoProyecto] || [];
   return (arr.find(x => x.mga === mga) || {}).det || [];
+}
+
+// ID financiero = Proyecto · código MGA · descripción de actividad detallada
+function componerIdFinanciero(r) {
+  const proyecto = r.m2?.proyecto || '';
+  const codMga = (String(r.m2?.mga || '').match(/^[\d.]+/) || [''])[0].replace(/\.+$/, '').trim();
+  const actDet = r.m2?.actDet || '';
+  return [proyecto, codMga, actDet].filter(Boolean).join(' · ');
+}
+
+// Actualiza el ID financiero (modelo + campo visible) tras cambiar proyecto/MGA/actividad
+function refreshIdFinanciero() {
+  if (!state.editingReq) return;
+  const val = componerIdFinanciero(state.editingReq);
+  setReqPath(state.editingReq, 'm3.idInterno', val);
+  const el = document.getElementById('idFinancieroAuto');
+  if (el) el.value = val;
 }
 
 // Opciones <option> de actividad detallada para un (proyecto, MGA)
@@ -708,6 +725,7 @@ function recalcularReq(r) {
   r.m2.cantidad = cantidadTotal; r.m2.obs = first.obs;
   r.m2.evSpc = first.evSpc; r.m2.evOper = first.evOper;
   r.m3.precio = first.precio; r.m3.tarifaImp = first.tarifaImp;
+  r.m3.idInterno = componerIdFinanciero(r); // ID financiero compuesto
   return r;
 }
 
@@ -1629,6 +1647,7 @@ document.getElementById('modalSave').addEventListener('click', async () => {
   const r = state.editingReq;
   if (!r) return;
   const isNew = r.id === 'new';
+  r.m3.idInterno = componerIdFinanciero(r); // ID financiero al día antes de guardar
   if (isNew) {
     const errs = validarReq(r);
     if (errs.length) { showToast('Faltan campos obligatorios: ' + errs.join(' · '), 'error'); return; }
@@ -1954,9 +1973,9 @@ function renderModalContent() {
       </div>
 
       <div class="form-grid cols-3">
-        <div class="form-group">
-          <label class="form-label">ID interno <span class="hint">(Col P)</span></label>
-          <input type="text" class="form-input mono" data-field="m3.idInterno" value="${esc(r.m3.idInterno || '')}" placeholder="Ej: P-2026-0001" ${dis}>
+        <div class="form-group span-3">
+          <label class="form-label">ID financiero <span class="hint">(auto: Proyecto · cód. MGA · actividad detallada)</span></label>
+          <input type="text" class="form-input mono" id="idFinancieroAuto" value="${esc(componerIdFinanciero(r))}" disabled>
         </div>
         <div class="form-group">
           <label class="form-label">Tipo de recurso <span class="hint">(Col AZ · definido en M1)</span></label>
@@ -2139,6 +2158,7 @@ function attachProyectoSelect() {
       selDet.innerHTML = opcionesDetalladas(sel.value, '', '');
       if (state.editingReq) setReqPath(state.editingReq, 'm2.actDet', '');
     }
+    refreshIdFinanciero();
   });
 }
 
@@ -2152,7 +2172,10 @@ function attachMgaSelect() {
     selDet.innerHTML = opcionesDetalladas(proyecto, selMGA.value, '');
     // Refleja en el modelo la selección (incluye autoselección si hay una sola)
     if (state.editingReq) setReqPath(state.editingReq, 'm2.actDet', selDet.value);
+    refreshIdFinanciero();
   });
+  // Al cambiar la actividad detallada, recomponer el ID financiero
+  if (selDet) selDet.addEventListener('change', refreshIdFinanciero);
 }
 
 // Permite al financiero ajustar IVA y administración por ítem desde M3 (al editar)
