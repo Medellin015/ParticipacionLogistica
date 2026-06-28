@@ -496,6 +496,25 @@ function detalladasDe(codigoProyecto, mga) {
   return (arr.find(x => x.mga === mga) || {}).det || [];
 }
 
+// Mapa { subsec: monto } — presupuesto inicial asignado por subsecretaría.
+// Lo carga el usuario después; editable en la app y guardado en Firestore.
+let PRESUPUESTO_INICIAL = {};
+async function loadPresupuestoInicial() {
+  try {
+    const fb = await esperarFirebase();
+    const snap = await fb.getDoc(fb.doc(fb.db, 'catalogos', 'presupuestoInicial'));
+    if (snap.exists()) PRESUPUESTO_INICIAL = snap.data().mapa || {};
+  } catch (err) {
+    console.error('No se pudo cargar el presupuesto inicial:', err);
+  }
+  return PRESUPUESTO_INICIAL;
+}
+
+async function guardarPresupuestoInicial() {
+  const fb = await esperarFirebase();
+  await fb.setDoc(fb.doc(fb.db, 'catalogos', 'presupuestoInicial'), { mapa: PRESUPUESTO_INICIAL }, { merge: true });
+}
+
 // Garantiza la lista r.m2.proyectos (varios proyectos/fuentes de financiación).
 // Mismo patrón que migrarItems: si ya existe la lista, no toca nada; si no, la
 // construye desde los escalares antiguos (representante) con monto 0 (sin distribuir).
@@ -978,6 +997,7 @@ function refreshM3Calc() {
       await loadProyectos();     // catálogo de proyectos (código → nombre)
       await loadMgaPorProyecto(); // actividades MGA por proyecto
       await loadDetalladas();    // actividades detalladas por (proyecto, MGA)
+      await loadPresupuestoInicial(); // presupuesto inicial asignado por subsecretaría
       await loadRequerimientos();
       suscribirRequerimientos(); // actualizaciones en vivo de otros usuarios
     } catch (err) {
@@ -1245,6 +1265,45 @@ function renderDashboard() {
     return 'clickable recurso-dimmed';
   };
 
+  // ── Resumen por subsecretaría (presupuesto inicial vs ejecutado) ──────────
+  // IMPORTANTE: este bloque usa la cartera COMPLETA (REQUERIMIENTOS), NO el
+  // crossFilter. El presupuesto inicial es una asignación fija por subsecretaría
+  // y esta tabla es la vista ejecutiva global; por eso no se filtra como los gráficos.
+  const puedeEditarPresup = ROLES_TOTALES.includes(state.role);
+  // Conjunto de subsecs: catálogo primero, luego las presentes en datos no cubiertas.
+  const subsecsPresup = [...CATALOGOS.subsecretarias];
+  REQUERIMIENTOS.forEach(r => {
+    const s = r.m1?.subsec;
+    if (s && !subsecsPresup.includes(s)) subsecsPresup.push(s);
+  });
+  const filasPresup = subsecsPresup.map(subsec => {
+    const inicial = Number(PRESUPUESTO_INICIAL[subsec]) || 0;
+    const ejec = REQUERIMIENTOS
+      .filter(r => r.m1?.subsec === subsec && r.estadoTramite === 'Ejecutado')
+      .reduce((s, r) => s + (r.m3?.valorEjec || 0), 0);
+    const pct = inicial > 0 ? ejec / inicial : 0;
+    const pendiente = inicial - ejec;
+    return { subsec, inicial, ejec, pct, pendiente };
+  });
+  const totInicial = filasPresup.reduce((s, f) => s + f.inicial, 0);
+  const totEjec = filasPresup.reduce((s, f) => s + f.ejec, 0);
+  const totPendiente = totInicial - totEjec;
+  const pctGlobal = totInicial > 0 ? totEjec / totInicial : 0;
+
+  const presupCellInicial = f => puedeEditarPresup
+    ? `<input type="text" class="presup-input mono" data-subsec="${esc(f.subsec)}" value="${esc(f.inicial || 0)}">`
+    : fmt.cop(f.inicial);
+
+  const filasPresupHtml = filasPresup.map(f => `
+    <tr>
+      <td>${esc(f.subsec)}</td>
+      <td class="presup-num">${presupCellInicial(f)}</td>
+      <td class="presup-num mono">${fmt.cop(f.ejec)}</td>
+      <td class="presup-num mono">${fmt.pct(f.pct)}</td>
+      <td class="presup-num mono${f.pendiente < 0 ? ' presup-neg' : ''}">${fmt.cop(f.pendiente)}</td>
+    </tr>
+  `).join('');
+
   return `
     <div class="page-header">
       <h1>Resumen ejecutivo</h1>
@@ -1252,6 +1311,42 @@ function renderDashboard() {
     </div>
 
     ${chip}
+
+    <div class="total-contrato-card presup-hero">
+      <div class="total-contrato-label">Presupuesto inicial (asignado)</div>
+      <div class="total-contrato-value">${fmt.cop(totInicial)}</div>
+      <div class="total-contrato-meta">
+        ${fmt.cop(totEjec)} ejecutado · ${fmt.pct(pctGlobal)} ejecución · ${fmt.cop(totPendiente)} pendiente por ejecutar
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Resumen por subsecretaría</div>
+        ${puedeEditarPresup ? '<div class="panel-action" style="cursor:default;">Presupuesto inicial editable</div>' : ''}
+      </div>
+      <table class="data-table presup-table" style="margin: -16px;">
+        <thead>
+          <tr>
+            <th>Subsecretaría</th>
+            <th style="text-align:right;">Presupuesto inicial</th>
+            <th style="text-align:right;">Ejecutado</th>
+            <th style="text-align:right;">% ejecución</th>
+            <th style="text-align:right;">Pendiente por ejecutar</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filasPresupHtml}
+          <tr class="presup-total">
+            <td>TOTAL</td>
+            <td class="presup-num mono">${fmt.cop(totInicial)}</td>
+            <td class="presup-num mono">${fmt.cop(totEjec)}</td>
+            <td class="presup-num mono">${fmt.pct(pctGlobal)}</td>
+            <td class="presup-num mono${totPendiente < 0 ? ' presup-neg' : ''}">${fmt.cop(totPendiente)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <div class="kpi-grid">
       <div class="kpi-card">
@@ -1480,6 +1575,24 @@ function afterRenderDashboard() {
     state.crossFilter = null;
     render();
   });
+
+  // Presupuesto inicial editable: solo roles totales enganchan listeners.
+  // Las celdas de roles sin permiso ya se renderizan en solo lectura.
+  if (ROLES_TOTALES.includes(state.role)) {
+    document.querySelectorAll('.presup-input').forEach(inp => {
+      inp.addEventListener('change', async () => {
+        const sub = inp.dataset.subsec;
+        PRESUPUESTO_INICIAL[sub] = parseNumCO(inp.value);
+        try {
+          await guardarPresupuestoInicial();
+          showToast('Presupuesto inicial guardado');
+        } catch (e) {
+          showToast('No se pudo guardar el presupuesto inicial', 'error');
+        }
+        render(); // refresca %, pendiente y totales
+      });
+    });
+  }
 }
 
 /* ============================================================
