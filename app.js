@@ -1821,6 +1821,9 @@ document.getElementById('modalDelete').addEventListener('click', async () => {
   } catch (err) {
     console.error(err);
     showToast('Error al eliminar: ' + err.message, 'error');
+  } finally {
+    // Restaurar el botón siempre (también en éxito): el modal se reutiliza, si quedara
+    // deshabilitado bloquearía la siguiente operación.
     btn.disabled = false;
     btn.textContent = original;
   }
@@ -1871,6 +1874,9 @@ document.getElementById('modalSave').addEventListener('click', async () => {
   } catch (err) {
     console.error(err);
     showToast('Error al guardar: ' + err.message, 'error');
+  } finally {
+    // Restaurar el botón siempre (también en éxito): el modal se reutiliza entre
+    // requerimientos; si quedara deshabilitado, no se podría volver a guardar.
     btn.disabled = false;
     btn.textContent = original;
   }
