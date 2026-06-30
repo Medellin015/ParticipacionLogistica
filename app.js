@@ -374,14 +374,16 @@ state.columnasVisibles = COLUMNAS_DETALLE.filter(c => c.def).map(c => c.id);
 const TODOS_TABS = ['m1', 'm2', 'm3', 'contratista', 'revision'];
 const ROLE_INFO = {
   logistico1:  { name: 'Logístico 1',       initials: 'L1', label: 'Logístico 1',  canEdit: ['m1'] },
-  logistico2:  { name: 'Juan José Pérez',   initials: 'JP', label: 'Logístico 2',  canEdit: TODOS_TABS },
+  logistico2:  { name: 'Logístico 2',       initials: 'L2', label: 'Logístico 2',  canEdit: TODOS_TABS },
   financiero:  { name: 'Financiero',        initials: 'FN', label: 'Financiero',   canEdit: TODOS_TABS },
   coordinacion:{ name: 'Coordinación',      initials: 'CO', label: 'Coordinación', canEdit: [] },
   contratista: { name: 'Metro Parques',     initials: 'MP', label: 'Contratista',  canEdit: ['contratista'] },
   revision:    { name: 'Revisión',          initials: 'RV', label: 'Revisión',     canEdit: [] }
 };
-// Roles con permisos totales (crear, eliminar, editar todo)
+// Roles con permisos totales (eliminar, editar todo, presupuesto)
 const ROLES_TOTALES = ['logistico2', 'financiero'];
+// Roles que pueden CREAR requerimientos (incluye al Logístico 1, además de los totales)
+const ROLES_CREAR = ['logistico1', 'logistico2', 'financiero'];
 // Roles con acceso a la vista de Auditoría (supervisión)
 const ROLES_AUDITORIA = ['logistico2', 'financiero', 'coordinacion'];
 
@@ -1086,7 +1088,7 @@ function render() {
 }
 
 function renderEmptyState() {
-  const puedeCrear = ROLES_TOTALES.includes(state.role);
+  const puedeCrear = ROLES_CREAR.includes(state.role);
   return `
     <div class="page-header">
       <h1>Resumen ejecutivo</h1>
@@ -1614,7 +1616,7 @@ function getFilteredReqs() {
 
 function renderRequerimientos() {
   const reqs = getFilteredReqs();
-  const canCreate = ROLES_TOTALES.includes(state.role);
+  const canCreate = ROLES_CREAR.includes(state.role);
 
   return `
     <div class="page-header">
